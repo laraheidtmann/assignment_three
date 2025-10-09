@@ -1,23 +1,80 @@
-#VRML_SIM R2022b utf8
+#VRML_SIM R2025a utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/CircleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/Floor.proto"
 
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.33185733874619844 -0.09874274160469809 0.9381474178937331 3.686018050088086
-  position 1.700313773507203 1.0549607538959629 1.4846240848267684
-  follow "my_robot"
+  orientation -0.4764327339353254 -0.1212491990979171 0.8708102444005957 3.5777747205344834
+  position 4.230951265229669 1.7138288301545885 4.556365686199892
+  follow "host_robot"
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
-CircleArena {
+Floor {
 }
+
+Solid {
+  translation 0.228372 0.168158 0.15
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.7 0.7 0.7
+      }
+      geometry Box {
+        size 1 0.2 0.3
+      }
+    }
+  ]
+  name "wall_1"
+  boundingObject Box {
+    size 1 0.2 0.3
+  }
+}
+Solid {
+  translation -0.691499 0.349073 0.15
+  rotation 0 0 1 -0.3926996938995747
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.7 0.7 0.7
+      }
+      geometry Box {
+        size 1 0.2 0.3
+      }
+    }
+  ]
+  name "wall_2"
+  boundingObject Box {
+    size 1 0.2 0.3
+  }
+}
+Solid {
+  translation -1.02618 0.944936 0.15
+  rotation 0 0 1 -1.7016996938995748
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.7 0.7 0.7
+      }
+      geometry Box {
+        size 1 0.2 0.3
+      }
+    }
+  ]
+  name "wall_3"
+  boundingObject Box {
+    size 1 0.2 0.3
+  }
+}
+
 Robot {
+  translation -0.00177116 0.425896 -4.44089e-16
+  rotation -0.7071067811865475 0 0.7071067811865475 0
   children [
     HingeJoint {
       jointParameters HingeJointParameters {
@@ -27,12 +84,13 @@ Robot {
       device [
         RotationalMotor {
           name "left wheel motor"
+          maxVelocity 20
         }
       ]
       endPoint Solid {
         translation 0 0.045 0.025
         children [
-          DEF WHEEL Transform {
+          DEF WHEEL Pose {
             rotation 1 0 0 1.5707996938995747
             children [
               Shape {
@@ -63,6 +121,7 @@ Robot {
       device [
         RotationalMotor {
           name "right wheel motor"
+          maxVelocity 20
         }
       ]
       endPoint Solid {
@@ -76,7 +135,7 @@ Robot {
         }
       }
     }
-    Transform {
+    Pose {
       translation 0 0 0.0415
       children [
         Shape {
@@ -93,52 +152,25 @@ Robot {
       ]
     }
     DistanceSensor {
-      translation 0.042 0.02 0.063
-      rotation 0 0 1 0.5236003061004253
-      children [
-        DEF SENSOR Transform {
-          rotation 0 1 0 1.5708
-          children [
-            Shape {
-              appearance PBRAppearance {
-                baseColor 1 1 0
-                roughness 1
-                metalness 0
-              }
-              geometry Cylinder {
-                height 0.004
-                radius 0.008
-              }
-            }
-          ]
-        }
-      ]
-      name "ds0"
+      translation 0.05 0 0.03
+      name "ds_front"
       lookupTable [
-        0 1020 0
-        0.05 1020 0
-        0.15 0 0
+        0 0 0
+        0.3 100 0
       ]
-      numberOfRays 2
-      aperture 1
     }
     DistanceSensor {
-      translation 0.042 -0.02 0.063
-      rotation 0 0 1 -0.5235996938995747
-      children [
-        USE SENSOR
-      ]
-      name "ds1"
+      translation 0 -0.05 0.03
+      rotation 0 0 1 -1.57
+      name "ds_right"
       lookupTable [
-        0 1020 0
-        0.05 1020 0
-        0.15 0 0
+        0 0 0
+        0.3 100 0
       ]
-      numberOfRays 2
-      aperture 1
     }
   ]
-  boundingObject Transform {
+  name "host_robot"
+  boundingObject Pose {
     translation 0 0 0.0415
     children [
       USE BODY
@@ -147,5 +179,4 @@ Robot {
   physics Physics {
   }
   controller "<extern>"
-  name "my_robot"
 }

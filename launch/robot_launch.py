@@ -15,7 +15,7 @@ def generate_launch_description():
     )
 
     host_node = WebotsController(
-        robot_name='my_robot',
+        robot_name='host_robot',
         parameters=[
             {'robot_description': robot_description_path},
         ]
@@ -24,6 +24,7 @@ def generate_launch_description():
     return LaunchDescription([
         webots,
         host_node,
+        # Shutdown ROS 2 when Webots exits
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,
