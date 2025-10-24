@@ -36,11 +36,18 @@ class WallFollower(Node):
     def __init__(self):
         super().__init__('wall_follower_reactive')
 
+         # --- Configuration Parameters ---
+        self.TURTLEBOT_RADIUS = 0.14  # Approx radius/diameter for size check (m)
+        self.MIN_OBJECT_SIZE = 0.10   # Minimum cluster width (m)
+        self.MAX_OBJECT_SIZE = 0.30   # Maximum cluster width (m)
+        self.DISTANCE_THRESHOLD = 0.05 # Max distance between consecutive points in a cluster (m)
+        self.LIDAR_MAX_RANGE = 3.5    # Max range of the simulated TurtleBot3 LDS-01
+
+
         namespace = self.get_namespace()
         cmd_topic = f'{namespace}/cmd_vel' if namespace != '/' else '/cmd_vel'
         scan_topic = f'{namespace}/scan' if namespace != '/' else '/scan'
 
-        self.distance_sub=self.create_subscription(Float32,'/distance_topic',self.distance_callback,10)
         self.wait_for_follower=False
         self.distance_to_follower=None
 
@@ -53,15 +60,138 @@ class WallFollower(Node):
         self.integral = 0.0
         self.prev_error = 0.0
 
-        self.get_logger().info("✅ Host controller started!")
+        self.get_logger().info("Host controller started!")
 
-    def distance_callback(self, dist: Float32):
-        self.distance_to_follower=dist.data
 
-        if dist.data > DISTANCE_TO_BOT:
-            self.wait_for_follower=True
+
+    def _polar_to_cartesian(self, ranges, angle_min, angle_increment):
+        """Converts polar Lidar readings to 2D Cartesian coordinates (x, y)."""
         
+        # Filter out invalid readings (inf or 0.0)
+        valid_indices = (ranges < self.LIDAR_MAX_RANGE) & (ranges > 0.05)
+        valid_ranges = ranges[valid_indices]
+        
+        # Calculate angles for valid points
+        angles = angle_min + np.where(valid_indices)[0] * angle_increment
+        
+        # Convert to Cartesian
+        x = valid_ranges * np.cos(angles)
+        y = valid_ranges * np.sin(angles)
+        
+        # Return a list of points (x, y)
+        return np.vstack((x, y)).T
 
+    def _cluster_by_distance(self, points):
+        """
+        Groups adjacent Lidar points into clusters if they are close enough.
+        This is a simplified approach to clustering, replacing full DBSCAN.
+        """
+
+        self.get_logger().info("in cluster by distance")
+
+        if len(points) < 2:
+            return []
+
+        clusters = []
+        current_cluster = [points[0]]
+
+        for i in range(1, len(points)):
+            # Calculate Euclidean distance between current point and previous point
+            distance = np.linalg.norm(points[i] - points[i-1])
+
+            if distance < self.DISTANCE_THRESHOLD:
+                # Points are close, add to current cluster
+                current_cluster.append(points[i])
+            else:
+                # Gap is too large, finalize previous cluster and start a new one
+                if len(current_cluster) > 1: # Require at least 2 points to form an object
+                    clusters.append(np.array(current_cluster))
+                current_cluster = [points[i]]
+
+        # Add the last cluster if it's valid
+        if len(current_cluster) > 1:
+            clusters.append(np.array(current_cluster))
+
+        return clusters
+
+    def _filter_cluster_by_size(self, cluster):
+        """
+        Checks if a cluster's size and dimensions match a TurtleBot3.
+        Size is estimated by the spread (bounding box) of points in the cluster.
+        """
+        self.get_logger().info("in filter cluster by size")
+       
+        # Calculate the extent (max span) of the cluster points
+        min_x, max_x = np.min(cluster[:, 0]), np.max(cluster[:, 0])
+        min_y, max_y = np.min(cluster[:, 1]), np.max(cluster[:, 1])
+
+        width = max_x - min_x
+        height = max_y - min_y
+        
+        # The TurtleBot3 is roughly circular, so its width and height should be similar
+        # and fall within the defined size limits.
+        
+        # Check if either dimension falls within the expected range
+        is_correct_size = (self.MIN_OBJECT_SIZE < width < self.MAX_OBJECT_SIZE) or \
+                          (self.MIN_OBJECT_SIZE < height < self.MAX_OBJECT_SIZE)
+        
+        # Also check for aspect ratio (optional but good for filtering non-robots)
+        aspect_ratio = max(width, height) / (min(width, height) + 1e-6) # Add small epsilon to avoid div by zero
+        is_reasonable_shape = aspect_ratio < 3.0 # Assuming the robot isn't severely elongated in the scan
+
+        return is_correct_size and is_reasonable_shape
+
+
+    def detect_follower(self, msg: LaserScan):
+        """        
+        Processes lidar data to find the target robot.
+        """
+        self.get_logger().info("in detect_follower")
+        
+        # Convert raw ranges to a NumPy array for processing
+        ranges = np.array(msg.ranges)
+        
+        # 1. Convert Lidar data to Cartesian coordinates
+        cartesian_points = self._polar_to_cartesian(
+            ranges,
+            msg.angle_min,
+            msg.angle_increment
+        )
+        
+        # 2. Cluster the points to identify distinct objects
+        clusters = self._cluster_by_distance(cartesian_points)
+        
+        closest_target_distance = self.LIDAR_MAX_RANGE + 1.0 # Initialize to a very large distance
+        
+        # 3. Filter clusters by size and find the closest matching target
+        for cluster in clusters:
+            if self._filter_cluster_by_size(cluster):
+                # We found a cluster that matches the expected size of a TurtleBot3
+                
+                # Calculate the minimum distance from Robot 1 (origin) to the cluster
+                # Distance of a point (x, y) from origin is sqrt(x^2 + y^2)
+                distances = np.linalg.norm(cluster, axis=1)
+                min_cluster_distance = np.min(distances)
+                
+                # Track the closest detected target
+                if min_cluster_distance < closest_target_distance:
+                    closest_target_distance = min_cluster_distance
+
+        # 4. Publish the closest distance found
+        distance_msg = Float32()
+        
+        # If no robot was detected, publish a value greater than the max detection range 
+        # (or an agreed-upon "not detected" distance)
+        if closest_target_distance > self.LIDAR_MAX_RANGE:
+            distance_msg.data = closest_target_distance 
+            self.get_logger().debug("Target robot not detected.")
+        else:
+            distance_msg.data = float(closest_target_distance)
+            self.get_logger().info(f"Target robot detected at {distance_msg.data:.3f} m.")
+        
+        self.distance_to_follower=closest_target_distance
+
+        #self.distance_pub.publish(distance_msg)
 
 
     def angle_to_index(self, scan: LaserScan, angle_rad: float) -> int:
@@ -111,7 +241,11 @@ class WallFollower(Node):
         fit_error = np.std(Xc @ perp)
         return alpha, dist, fit_error
 
+
     def scan_callback(self, scan: LaserScan):
+        #call method to calculate distance to follower
+        detect_follower(scan)
+
         cmd = Twist()
 
         # 1. Obstacle avoidance in front of the robot (highest priority)
@@ -160,14 +294,16 @@ class WallFollower(Node):
         cmd.angular.z = omega
 
         #don't move if follower is too far away
-        if self.wait_for_follower==True:
-            cmd.linear.x=0.0
-            cmd.angular.z=0.0
-            self.wait_for_follower=False
-        
         if self.distance_to_follower != None:
-            if self.distance_to_follower< DISTANCE_TO_BOT:
-                cmd.linear.x = cmd.linear.x + 0.1 #speeds up if follower comes too close
+            if self.distance_to_follower> DISTANCE_TO_BOT:
+                cmd.linear.x=0.0
+                cmd.angular.z=0.0
+                self.get_logger().info("Guest too far away so I wait.")
+        else:
+            self.get_logger().info("Distance to follower is None.")
+
+
+
         
 
         self.cmd_pub.publish(cmd)

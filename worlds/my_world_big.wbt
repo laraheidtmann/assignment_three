@@ -56,7 +56,7 @@ TurtleBot3Burger {
 }
 TurtleBot3Burger {
   name "follower"
-  translation -1.66195 0.926246 8.88178e-15
+  translation -2.66195 0.926246 8.88178e-15
   controller "<extern>"
   controllerArgs [
     ""
