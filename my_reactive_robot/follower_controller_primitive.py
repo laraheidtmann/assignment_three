@@ -127,6 +127,13 @@ class WallFollower(Node):
         self.get_logger().debug(f"Published distance to leader: {msg.data:.2f} m")
         cmd = Twist()
 
+        #if robot gets too close to leader bot make it stop. unfortunately overrides obstacle avoidance mechanism
+        if front_dist < 0.3:
+            cmd.linear.x = 0.0
+            cmd.angular.z =0.0
+            self.cmd_pub.publish(cmd)
+            return
+
 
         # 1. Obstacle avoidance in front of the robot (highest priority)
         front = self.get_distance(scan, 0)

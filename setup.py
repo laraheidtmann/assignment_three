@@ -27,7 +27,7 @@ setup(
         'console_scripts': [
             'turtlebot_driver = my_reactive_robot.turtlebot_driver:main',
             'leader_controller = my_reactive_robot.host_controller:main',
-            'follower_controller = my_reactive_robot.follower_controller_1:main',
+            'follower_controller = my_reactive_robot.follower_controller:main',
         ],
     },
 )

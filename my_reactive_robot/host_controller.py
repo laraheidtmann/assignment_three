@@ -42,6 +42,7 @@ class WallFollower(Node):
 
         self.distance_sub=self.create_subscription(Float32,'/distance_topic',self.distance_callback,10)
         self.wait_for_follower=False
+        self.distance_to_follower=None
 
 
 
@@ -55,6 +56,8 @@ class WallFollower(Node):
         self.get_logger().info("✅ Host controller started!")
 
     def distance_callback(self, dist: Float32):
+        self.distance_to_follower=dist.data
+
         if dist.data > DISTANCE_TO_BOT:
             self.wait_for_follower=True
         
@@ -161,6 +164,11 @@ class WallFollower(Node):
             cmd.linear.x=0.0
             cmd.angular.z=0.0
             self.wait_for_follower=False
+        
+        if self.distance_to_follower != None:
+            if self.distance_to_follower< DISTANCE_TO_BOT:
+                cmd.linear.x = cmd.linear.x + 0.1 #speeds up if follower comes too close
+        
 
         self.cmd_pub.publish(cmd)
 
