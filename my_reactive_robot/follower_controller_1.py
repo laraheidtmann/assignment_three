@@ -28,8 +28,7 @@ SAMPLE_START_DEG = -100
 SAMPLE_END_DEG = -20
 SAMPLE_STEP_DEG = 5
 
-#Distance to second bot
-DISTANCE_TO_BOT=0.8
+#TODO: add a topic where the distance to the robot infront of it is measured and sent to that topic. 
 
 
 class WallFollower(Node):
@@ -40,9 +39,7 @@ class WallFollower(Node):
         cmd_topic = f'{namespace}/cmd_vel' if namespace != '/' else '/cmd_vel'
         scan_topic = f'{namespace}/scan' if namespace != '/' else '/scan'
 
-        self.distance_sub=self.create_subscription(Float32,'/distance_topic',self.distance_callback,10)
-        self.wait_for_follower=False
-
+        self.distance_pub=self.create_publisher(Float32,'/distance_topic',10)
 
 
         self.cmd_pub = self.create_publisher(Twist, cmd_topic, 10)
@@ -53,11 +50,7 @@ class WallFollower(Node):
         self.prev_error = 0.0
 
         self.get_logger().info("✅ Host controller started!")
-
-    def distance_callback(self, dist: Float32):
-        if dist.data > DISTANCE_TO_BOT:
-            self.wait_for_follower=True
-        
+        self.latest_front_distance = None
 
 
 
@@ -108,8 +101,32 @@ class WallFollower(Node):
         fit_error = np.std(Xc @ perp)
         return alpha, dist, fit_error
 
+    
+    
+    
     def scan_callback(self, scan: LaserScan):
+        # compute distance to the leader bot
+        
+        # Convert ranges to a numpy array and handle NaNs
+        ranges = np.nan_to_num(np.array(scan.ranges), nan=scan.range_max, posinf=scan.range_max)
+        
+        n = len(ranges)
+        mid = int(round((0.0 - scan.angle_min) / scan.angle_increment))  # index at 0 radians
+        window = 5
+        start = max(0, mid - window)
+        end = min(n, mid + window)
+        
+        front_dist = float(np.min(ranges[start:end]))
+        self.latest_front_distance = front_dist
+
+        # Publish distance to leader robot 
+        msg = Float32()
+        msg.data = self.latest_front_distance
+        self.distance_pub.publish(msg)
+
+        self.get_logger().debug(f"Published distance to leader: {msg.data:.2f} m")
         cmd = Twist()
+
 
         # 1. Obstacle avoidance in front of the robot (highest priority)
         front = self.get_distance(scan, 0)
@@ -155,12 +172,6 @@ class WallFollower(Node):
 
         cmd.linear.x = LINEAR_SPEED * speed_scale
         cmd.angular.z = omega
-
-        #don't move if follower is too far away
-        if self.wait_for_follower==True:
-            cmd.linear.x=0.0
-            cmd.angular.z=0.0
-            self.wait_for_follower=False
 
         self.cmd_pub.publish(cmd)
 
