@@ -211,16 +211,30 @@ class WallFollower(Node):
         cmd.linear.x = LINEAR_SPEED * speed_scale
         cmd.angular.z = omega
 
-        #don't move if follower is too far away
-        if self.distance_to_follower != None:
-            if self.distance_to_follower> DISTANCE_TO_BOT:
-                cmd.linear.x=0.0
-                cmd.angular.z=0.0
-                self.get_logger().info("Guest too far away so I wait.")
-                self.distance_to_follower=None
-        else:
-            self.get_logger().info("Distance to follower is None.")
+        # #don't move if follower is too far away
+        # if self.distance_to_follower != None:
+        #     if self.distance_to_follower> DISTANCE_TO_BOT:
+        #         cmd.linear.x=0.0
+        #         cmd.angular.z=0.0
+        #         self.get_logger().info("Guest too far away so I wait.")
+        #         self.distance_to_follower=None
+        # else:
+        #     self.get_logger().info("Distance to follower is None.")
 
+
+
+        if self.distance_to_follower is None:
+            self.get_logger().info("Distance to follower is None.")
+        else:
+            # Slow down as distance approaches the threshold
+            if self.distance_to_follower > DISTANCE_TO_BOT:
+                # scale linear speed proportionally
+                scale = max(0.0, 1.0 - (self.distance_to_follower - DISTANCE_TO_BOT) / 0.5)
+                cmd.linear.x *= scale
+                if cmd.linear.x < 0.01:
+                    cmd.linear.x = 0.0
+                    cmd.angular.z = 0.0
+                    self.get_logger().info("Guest too far away — waiting.")
 
 
         
