@@ -1,0 +1,20 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 50
+
+diff_drive_controller:
+  ros__parameters:
+    type: diff_drive_controller/DiffDriveController
+
+    left_wheel_names: ["left wheel motor"]
+    right_wheel_names: ["right wheel motor"]
+
+    publish_rate: 50
+
+    wheel_separation: 0.16
+    wheel_radius: 0.033
+
+    publish_tf: true
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    enable_odom_tf: true

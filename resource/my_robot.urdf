@@ -12,7 +12,7 @@
         </device>
 
         <!-- type="package_name.file_name.class_name" -->
-        <plugin type="my_reactive_robot.turtlebot_driver.TurtlebotDriver">
+        <plugin type="assignment_three_pkg.turtlebot_driver.TurtlebotDriver">
             <parameterExample>someValue</parameterExample>
         </plugin>
     </webots>

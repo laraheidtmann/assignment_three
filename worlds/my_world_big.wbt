@@ -46,7 +46,8 @@ Solid {
     ]
   }
 }
-TurtleBot3Burger {
+
+DEF leader TurtleBot3Burger {
   name "leader"
   translation -1.46195 0.926246 8.88178e-15
   controller "<extern>"
@@ -54,11 +55,17 @@ TurtleBot3Burger {
     ""
   ]
 }
-TurtleBot3Burger {
+DEF follower TurtleBot3Burger {
   name "follower"
   translation -1.86195 0.926246 8.88178e-15
   controller "<extern>"
   controllerArgs [
     ""
   ]
+}
+
+DEF ros2_supervisor Robot {
+  translation 0 0 0
+  rotation 0 1 0 0
+  controller "supervisor_controller"
 }

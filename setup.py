@@ -1,14 +1,17 @@
 from setuptools import find_packages, setup
 
-package_name = 'my_reactive_robot'
+package_name = 'assignment_three_pkg'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_big.wbt']))
+data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
 data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
+data_files.append(('share/' + package_name + '/controllers', ['controllers/supervisor_controller/supervisor_controller.py']))
+
 data_files.append(('share/' + package_name, ['package.xml']))
 
 setup(
@@ -25,9 +28,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'turtlebot_driver = my_reactive_robot.turtlebot_driver:main',
-            'leader_controller = my_reactive_robot.host_controller:main',
-            'follower_controller = my_reactive_robot.guest_controller:main',
+            'turtlebot_driver = assignment_three_pkg.turtlebot_driver:main',
+            'robot_controller = assignment_three_pkg.robot_controller:main',
+            'odom_calculator = assignment_three_pkg.odom_calculator:main',
+
         ],
     },
 )

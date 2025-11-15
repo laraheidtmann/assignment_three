@@ -3,13 +3,13 @@
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/Floor.proto"
-
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/robotis/turtlebot/protos/TurtleBot3Burger.proto"
 WorldInfo {
 }
 Viewpoint {
   orientation -0.4764327339353254 -0.1212491990979171 0.8708102444005957 3.5777747205344834
   position 4.230951265229669 1.7138288301545885 4.556365686199892
-  follow "host_robot"
+  follow "turtlebot3_burger"
 }
 TexturedBackground {
 }
@@ -72,111 +72,27 @@ Solid {
   }
 }
 
-Robot {
-  translation -0.00177116 0.425896 -4.44089e-16
-  rotation -0.7071067811865475 0 0.7071067811865475 0
+TurtleBot3Burger {
+  name "turtlebot3_burger"
+  translation 0 0 0 
+  controller "<extern>"
+  controllerArgs [
+    ""
+  ]
+}
+
+# Static obstacle
+Solid {
+  translation 1.0 0 0.1
   children [
-    HingeJoint {
-      jointParameters HingeJointParameters {
-        axis 0 1 0
-        anchor 0 0 0.025
+    Shape {
+      appearance PBRAppearance { }
+      geometry Box {
+        size 0.5 0.5 0.5
       }
-      device [
-        RotationalMotor {
-          name "left wheel motor"
-          maxVelocity 20
-        }
-      ]
-      endPoint Solid {
-        translation 0 0.045 0.025
-        children [
-          DEF WHEEL Pose {
-            rotation 1 0 0 1.5707996938995747
-            children [
-              Shape {
-                appearance PBRAppearance {
-                  baseColor 1 0 0
-                  roughness 1
-                  metalness 0
-                }
-                geometry Cylinder {
-                  height 0.01
-                  radius 0.025
-                }
-              }
-            ]
-          }
-        ]
-        name "left wheel"
-        boundingObject USE WHEEL
-        physics Physics {
-        }
-      }
-    }
-    HingeJoint {
-      jointParameters HingeJointParameters {
-        axis 0 1 0
-        anchor 0 0 0.025
-      }
-      device [
-        RotationalMotor {
-          name "right wheel motor"
-          maxVelocity 20
-        }
-      ]
-      endPoint Solid {
-        translation 0 -0.045 0.025
-        children [
-          USE WHEEL
-        ]
-        name "right wheel"
-        boundingObject USE WHEEL
-        physics Physics {
-        }
-      }
-    }
-    Pose {
-      translation 0 0 0.0415
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0 0 1
-            roughness 1
-            metalness 0
-          }
-          geometry DEF BODY Cylinder {
-            height 0.08
-            radius 0.045
-          }
-        }
-      ]
-    }
-    DistanceSensor {
-      translation 0.05 0 0.03
-      name "ds_front"
-      lookupTable [
-        0 0 0
-        0.3 100 0
-      ]
-    }
-    DistanceSensor {
-      translation 0 -0.05 0.03
-      rotation 0 0 1 -1.57
-      name "ds_right"
-      lookupTable [
-        0 0 0
-        0.3 100 0
-      ]
     }
   ]
-  name "host_robot"
-  boundingObject Pose {
-    translation 0 0 0.0415
-    children [
-      USE BODY
-    ]
-  }
-  physics Physics {
-  }
-  controller "<extern>"
+  boundingObject Box { size 0.5 0.5 0.5 }
 }
+
+

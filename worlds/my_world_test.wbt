@@ -1,0 +1,32 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/robotis/turtlebot/protos/TurtleBot3Burger.proto"
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.4764327339353254 -0.1212491990979171 0.8708102444005957 3.5777747205344834
+  position 4.230951265229669 1.7138288301545885 4.556365686199892
+  follow "turtlebot3_burger"
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+Floor {
+}
+
+
+TurtleBot3Burger {
+  name "turtlebot3_burger"
+  translation 0 0 0 
+  controller "<extern>"
+  controllerArgs [
+    ""
+  ]
+}
+
+
+
