@@ -15,7 +15,7 @@ def generate_launch_description():
 
 
     webots = WebotsLauncher(
-        world=os.path.join(package_dir, 'worlds', 'my_world_test.wbt')
+        world=os.path.join(package_dir, 'worlds', 'my_world.wbt')
     )
 
     # Webots ROS2 driver for the TurtleBot3 Burger

@@ -6,6 +6,7 @@ from sensor_msgs.msg import LaserScan
 import math
 import numpy as np
 from std_msgs.msg import Float32
+from assignment_three_pkg.obstacle import Obstacle
 
 
 DESIRED_DISTANCE_FROM_WALL = 0.35
@@ -41,42 +42,128 @@ class WallFollower(Node):
 
     def odom_callback(self,msg):
         #update current position based on odometry
-        self.get_logger().info("Current position is updated.")
         self.current_position[0] = msg.x
         self.current_position[1] = msg.y
         self.current_position[2] = msg.theta
 
 
+    
+    def object_detection(self, scan: LaserScan):
+
+        FRONT_MIN_ANGLE = -15
+        FRONT_MAX_ANGLE = 15
+        DIST_THRESHOLD = 0.5   # meters (set as needed)
+
+        range_begin = -179
+        range_end   = 180
+        last_ray_distance = self.get_distance(scan, range_begin)
+        obstacles = []
+        detected_object = None
+
+        for angle in range(range_begin, range_end):
+            current_ray_distance = self.get_distance(scan, angle)
+            self.get_logger().info(f"distance measured:{current_ray_distance}")
+
+            if 0 < current_ray_distance < float('inf'):
+
+                # object begins (large drop)
+                if last_ray_distance - current_ray_distance > 0.5:
+                    detected_object = Obstacle()
+                    detected_object.set_beginning_border(current_ray_distance, angle)
+                    self.get_logger().info(f"object begin detected:{current_ray_distance}")
 
 
+                # object ends (large rise)
+                if current_ray_distance - last_ray_distance > 0.5:
+                    if detected_object is not None:
+                        detected_object.set_ending_border(current_ray_distance, angle)
+                        obstacles.append(detected_object)
+                        self.get_logger().info(f"object end detected:{current_ray_distance}")
+
+                    detected_object = None
+
+                if detected_object != None:
+                        detected_object.lidar_points.append((angle, current_ray_distance))
+                
+                last_ray_distance = current_ray_distance
+
+
+        
+        if obstacles:
+            self.get_logger().info("=== DETECTED OBSTACLES ===")
+            for i, obs in enumerate(obstacles):
+                min_dist = obs.min_distance()
+                self.get_logger().info(
+                    f"Obstacle {i}: "
+                    f"Begin(angle={obs.beginning_border_angle}, dist={obs.beginning_border_dist:.2f}), "
+                    f"End(angle={obs.ending_border_angle}, dist={obs.ending_border_dist:.2f}), "
+                    f"MinDist={min_dist:.2f} m, "
+                    f"Points={len(obs.lidar_points)}"
+                )
+        else:
+            self.get_logger().info("No obstacles detected.")
+                
+
+        for obstacle in obstacles:
+            # 1) is this obstacle in front (any lidar point near 0°)?
+            if not obstacle.is_in_front(FRONT_MIN_ANGLE, FRONT_MAX_ANGLE):
+                continue
+
+            # 2) is it closer than threshold?
+            min_dist = obstacle.min_distance()
+            if min_dist is None:
+                continue
+
+            if min_dist < DIST_THRESHOLD:
+                self.get_logger().info(
+                    f"Obstacle in front within threshold! min_dist={min_dist:.2f} m"
+                )
+                return obstacle   # return the obstacle object for avoidance
+
+        # no obstacle in front needing avoidance
+        return False
 
 
     def scan_callback(self,scan):
         cmd = Twist()
+        obstacle= self.object_detection(scan)
+        if obstacle != False:
+            self.get_logger().info("Obstacle detected. Trying to avoid it")
+            begin_dist, begin_angle = obstacle.get_beginning_border()
+            end_dist, end_angle     = obstacle.get_ending_border()
 
-        # 1. Obstacle avoidance in front of the robot (highest priority)
-        front = self.get_distance(scan, 0)
-        if front < 0.18:
-            cmd.linear.x = 0.0
-            cmd.angular.z = 0.8
+            #navigate to the closer obstacle boundary
+            if begin_dist<end_dist:
+                goal_dist=begin_dist
+                goal_angle=begin_angle-10
+            else:
+                goal_dist=end_dist
+                goal_angle=end_angle+10 #extra angle s.t. robot does not crash into object BUT how does it knoe if its -/+?
+
+            error_angle = math.radians(goal_angle)
+
+            Kp_turn = 0.5   # tune this value
+            cmd.angular.z = Kp_turn * error_angle
+
+            #how do i formulate the cmd??
+            cmd.linear.x = 0.1   # slow forward speed
             self.cmd_pub.publish(cmd)
             return
-        if front < FRONT_OBSTACLE_THRESHOLD:
-            cmd.linear.x = MIN_LINEAR_SPEED
-            cmd.angular.z = 0.5
-            self.cmd_pub.publish(cmd)
-            return
+
+
+        #2. if the robot is closer than a certain threshold to an obstacle, turn right or left 
+        # d
 
         # try to generate new velocity command taking into consideration: obstacles, goal position
         # strategy: 
         
-        #   1) first generate a velocity command towards goal position.
+        #   1) first generate a velocity command towards goal position. later, perhaps a trajectory
         #   2) check for (apporaching) obstacles or things in the way: 
         #   --> if there's something in the way avoid it by turning left or right
 
         # Get current position and goal
-        x, y, theta = self.current_position  # [x, y, theta]
-        goal_x, goal_y = self.goal_position  # [goal_x, goal_y]
+        x, y, theta = self.current_position  # [x, y, theta] obtained with odometry
+        goal_x, goal_y = self.goal_position  # [goal_x, goal_y]  fixed position defined at the beginning 
 
         # Compute vector to goal
         dx = goal_x - x
@@ -85,6 +172,7 @@ class WallFollower(Node):
 
         # Stop if close enough
         if distance_to_goal < GOAL_TOLERANCE:
+            self.get_logger().info("Goal has been reached successfully!")
             cmd.linear.x = 0.0
             cmd.angular.z = 0.0
         else:

@@ -45,7 +45,7 @@ class OdomCalc(Node):
         now=time.time()
 
         dt = (now - self.last_time) # seconds
-        self.get_logger().info(f"Elapsed time for dt: {dt}")
+        #self.get_logger().info(f"Elapsed time for dt: {dt}")
         self.last_time = now
 
         # Simple differential-drive integration (assuming velocities are in robot frame)

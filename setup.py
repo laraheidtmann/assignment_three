@@ -10,7 +10,6 @@ data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.w
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
 data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
-data_files.append(('share/' + package_name + '/controllers', ['controllers/supervisor_controller/supervisor_controller.py']))
 
 data_files.append(('share/' + package_name, ['package.xml']))
 
