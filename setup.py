@@ -4,12 +4,23 @@ package_name = 'assignment_three_pkg'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch.py']))
+data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch_full.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_big.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
-data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
+data_files.append(('share/' + package_name + '/config', ['config/diff_drive_controller.yaml']))
+data_files.append(('share/' + package_name + '/resource', [
+    'resource/turtlebot3_burger_example_map.pgm',
+    'resource/turtlebot3_burger_example_map.yaml',
+    'resource/turtlebot_webots.urdf',
+    'resource/ros2control.yml',
+    'resource/nav2_params.yaml'
+]))
+data_files.append(('share/' + package_name + '/worlds', [
+    'worlds/turtlebot3_burger_example.wbt', 'worlds/.turtlebot3_burger_example.wbproj',
+]))
 
 data_files.append(('share/' + package_name, ['package.xml']))
 
@@ -30,6 +41,11 @@ setup(
             'turtlebot_driver = assignment_three_pkg.turtlebot_driver:main',
             'robot_controller = assignment_three_pkg.robot_controller:main',
             'odom_calculator = assignment_three_pkg.odom_calculator:main',
+            'occupancy_grid = assignment_three_pkg.occupancy_grid_node:main',
+            'exploring_node = assignment_three_pkg.exploring_node:main',
+            'navigating_node = assignment_three_pkg.graph_navigator:main',
+
+
 
         ],
     },

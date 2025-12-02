@@ -5,14 +5,27 @@
             <ros>
                 <enabled>true</enabled>
                 <updateRate>5</updateRate>
-                <topicName>scan</topicName>
+                <topicName>/scan</topicName>
                 <alwaysOn>false</alwaysOn>
                 <frameName>LDS-01</frameName>
             </ros>
         </device>
 
+        <plugin type="webots_ros2_driver::Ros2IMU">
+            <enabled>true</enabled>
+            <updateRate>20</updateRate>
+            <topicName>/imu</topicName>
+            <alwaysOn>false</alwaysOn>
+            <frameName>imu_link</frameName>
+            <inertialUnitName>inertial_unit</inertialUnitName>
+            <gyroName>gyro</gyroName>
+            <accelerometerName>accelerometer</accelerometerName>
+        </plugin>
+
+        <plugin type="webots_ros2_control::Ros2Control" />
+
         <!-- type="package_name.file_name.class_name" -->
-        <plugin type="assignment_three_pkg.turtlebot_driver.TurtlebotDriver">
+        <plugin type="webots_ros2_turtlebot.plugin_example.PluginExample">
             <parameterExample>someValue</parameterExample>
         </plugin>
     </webots>

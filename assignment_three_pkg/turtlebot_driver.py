@@ -36,7 +36,7 @@ class TurtlebotDriver:
 
         self.__node.create_subscription(Twist, cmd_topic, self.__cmd_vel_callback, 1)
         
-        self.__node.get_logger().info("✅ TurtleBot driver initialized")
+        self.__node.get_logger().info("TurtleBot driver initialized")
 
     def __cmd_vel_callback(self, twist):
         self.__target_twist = twist
@@ -48,7 +48,7 @@ class TurtlebotDriver:
         angular_speed = self.__target_twist.angular.z
         
         if math.isnan(forward_speed) or math.isnan(angular_speed):
-            self.__node.get_logger().warn("⚠️ NaN detected in velocity command — skipping this cycle.")
+            self.__node.get_logger().warn("NaN detected in velocity command — skipping this cycle.")
             return
         
         command_motor_left = (forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS

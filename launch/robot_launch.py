@@ -10,55 +10,57 @@ from webots_ros2_driver.webots_controller import WebotsController
 
 
 def generate_launch_description():
-    package_dir = get_package_share_directory('assignment_three_pkg')
+    package_dir = get_package_share_directory('my_reactive_robot')
     robot_description_path = os.path.join(package_dir, 'resource', 'my_robot.urdf')
 
-
     webots = WebotsLauncher(
-        world=os.path.join(package_dir, 'worlds', 'my_world.wbt')
+        world=os.path.join(package_dir, 'worlds', 'my_world_big.wbt')
     )
 
-    # Webots ROS2 driver for the TurtleBot3 Burger
-    turtle_driver = WebotsController(
-        robot_name='turtlebot3_burger',
-        namespace='turtlebot3_burger',
+    leader_driver = WebotsController(
+        robot_name='leader',
+        namespace= 'leader',
         parameters=[
-         { 'robot_description': robot_description_path,
-            'use_sim_time': True}
-        ]
+            { 'robot_description': robot_description_path,
+            'robot_name': 'leader' }
+        ],
+    )
+    follower_driver = WebotsController(
+    robot_name='follower',
+    namespace= 'follower',
+    parameters=[
+        { 'robot_description': robot_description_path,
+        'robot_name': 'follower' }
+    ],
     )
 
-    # Your reactive navigation node
-    turtlebot_nav = Node(
-        package='assignment_three_pkg',
-        name='reactive_controller',
-        executable='robot_controller',
-        namespace='turtlebot3_burger',
-        parameters=[{
-            'use_sim_time': True}]
+    leader = Node(
+        package='my_reactive_robot',
+        name='leader',
+        executable='leader_controller',
+        namespace='leader'
     )
-    
-    odom_calc = Node(
-        package='assignment_three_pkg',
-        name='odom_calculator',
-        executable='odom_calculator',
-        namespace='turtlebot3_burger',
-        parameters=[{
-            'use_sim_time': True}]
+    follower = Node(
+        package='my_reactive_robot',
+        name='follower',
+        executable='follower_controller',
+        namespace='follower'
     )
-
-    
 
     return LaunchDescription([
         webots,
-        turtle_driver,
-        turtlebot_nav,
-        odom_calc,
+        leader_driver,
+        leader,
+        follower_driver,
+        follower,
 
+        # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,
-                on_exit=[launch.actions.EmitEvent(event=launch.events.Shutdown())],
+                on_exit=[
+                    launch.actions.EmitEvent(event=launch.events.Shutdown())
+                ],
             )
         ),
     ])
