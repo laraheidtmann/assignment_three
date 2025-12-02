@@ -11,6 +11,8 @@ from geometry_msgs.msg import PoseStamped, Twist
 from tf2_ros import Buffer, TransformListener
 import numpy as np
 from rclpy.time import Time
+import matplotlib.pyplot as plt
+import os
 
 GridIndex = Tuple[int, int]
 
@@ -65,6 +67,10 @@ class GraphNavigator(Node):
             f"GraphNavigator started (map={self.map_topic}, goal={self.goal_topic}, cmd_vel={self.cmd_vel_topic})"
         )
 
+
+      
+   
+
     # ---------------- Map handling ----------------
     def map_callback(self, msg: OccupancyGrid):
         # Store message and convert to 2D numpy array (shape: [height, width])
@@ -81,6 +87,7 @@ class GraphNavigator(Node):
         self.get_logger().info(f"Received map: {self.map_width} x {self.map_height}, res={self.map_resolution}")
         known_cells=self.count_known_cells(msg)
         self.get_logger().info(f"Known cells in map: {known_cells}")
+        self.get_logger().info(f"Percentage of explored map: {known_cells / (self.map_width * self.map_height) * 100:.2f}%")
     
     def count_known_cells(self,occ_grid: OccupancyGrid) -> int:
         """Return number of cells that are not -1 (i.e., known)."""
