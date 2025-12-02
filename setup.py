@@ -42,7 +42,7 @@ setup(
             'robot_controller = assignment_three_pkg.robot_controller:main',
             'odom_calculator = assignment_three_pkg.odom_calculator:main',
             'occupancy_grid = assignment_three_pkg.occupancy_grid_node:main',
-            'exploring_node = assignment_three_pkg.exploring_node:main',
+            'exploring_node = assignment_three_pkg.exploring_node_improved:main',
             'navigating_node = assignment_three_pkg.graph_navigator:main',
 
 
