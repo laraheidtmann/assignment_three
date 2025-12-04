@@ -38,11 +38,49 @@ def generate_launch_description():
     use_nav = LaunchConfiguration('nav', default=False)
     use_slam = LaunchConfiguration('slam', default=False)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
+    map_yaml=os.path.join(package_dir, 'slam_maps', 'map_best_run.yaml')
 
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
         mode=mode,
         ros2_supervisor=True
+    )
+    map_server=Node(
+        package="nav2_map_server",
+        executable="map_server",
+        name="map_server",
+        output="screen",
+        parameters=[{
+            "use_sim_time": True,
+            "yaml_filename": map_yaml,
+        }]
+    )
+    # AMCL node
+    amcl_node = Node(
+        package='nav2_amcl',
+        executable='amcl',
+        name='amcl',
+        output='screen',
+        parameters=[{
+            'use_sim_time': True,
+            'map_topic': '/map',
+            'odom_frame_id': 'odom',
+            'base_frame_id': 'base_footprint',
+            'scan_topic': '/scan',
+            'initial_pose': {'x': 6.36, 'y': 0.0, 'z': 0.0, 'yaw': 0.0}
+
+        }]
+    )
+    lifecycle_manager=Node(
+        package="nav2_lifecycle_manager",
+        executable="lifecycle_manager",
+        name="lifecycle_manager_map",
+        output="screen",
+        parameters=[{
+            "use_sim_time": True,
+            "autostart": True,
+            "node_names": ["map_server", "amcl"]
+        }]
     )
 
     robot_state_publisher = Node(
@@ -50,6 +88,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         output='screen',
         parameters=[{
+            'use_sim_time': use_sim_time,
             'robot_description': '<robot name=""><link name=""/></robot>'
         }],
     )
@@ -132,6 +171,7 @@ def generate_launch_description():
         target_driver=turtlebot_driver,
         nodes_to_start=navigation_nodes + ros_control_spawners
     )
+    
     #reactive node that explores the environment
     exploring_node = Node(
             package='assignment_three_pkg',
@@ -149,9 +189,12 @@ def generate_launch_description():
                 'goal_topic':'/goal_pose',
                 'cmd_vel_topic':'/cmd_vel',
                 'base_frame_id':'base_footprint',
+                'use_sim_time': True
             }]
 
     )
+
+
 
 
     return LaunchDescription([
@@ -174,8 +217,12 @@ def generate_launch_description():
         turtlebot_driver,
         waiting_nodes,
 
-        exploring_node,
+       #exploring_node,
         navigating_node,
+
+        map_server,
+        amcl_node,
+        lifecycle_manager,
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(

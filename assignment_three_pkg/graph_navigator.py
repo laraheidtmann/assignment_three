@@ -13,6 +13,7 @@ import numpy as np
 from rclpy.time import Time
 import matplotlib.pyplot as plt
 import os
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 
 GridIndex = Tuple[int, int]
 
@@ -56,9 +57,14 @@ class GraphNavigator(Node):
         # TF
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        qos_map = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL
+        )
 
         # Subscribers / Publishers / Timer
-        self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, 10)
+        self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, qos_map)
         self.goal_sub = self.create_subscription(PoseStamped, self.goal_topic, self.goal_callback, 10)
         self.cmd_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
         self.timer = self.create_timer(0.05, self.control_loop)
@@ -73,6 +79,7 @@ class GraphNavigator(Node):
 
     # ---------------- Map handling ----------------
     def map_callback(self, msg: OccupancyGrid):
+        self.get_logger().info("In map callback.")
         # Store message and convert to 2D numpy array (shape: [height, width])
         self.map_msg = msg
         self.map_width = int(msg.info.width)
@@ -146,6 +153,7 @@ class GraphNavigator(Node):
     # ---------------- Robot pose helper ----------------
     def get_robot_grid_index(self) -> Optional[GridIndex]:
         if not self.map_received:
+            self.get_logger().info("No map received yet. In get robot grid index")
             return None
         try:
             # lookup latest transform map <- base_frame_id
@@ -271,6 +279,7 @@ class GraphNavigator(Node):
         try:
             tf = self.tf_buffer.lookup_transform('map', self.base_frame_id, Time(), timeout=Duration(seconds=0.1))
         except Exception:
+            self.get_logger().info("tf lookup failed in control loop.")
             return
 
         x = tf.transform.translation.x

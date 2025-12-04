@@ -8,147 +8,178 @@ import numpy as np
 import math
 import time
 
+
 class Explorer(Node):
     def __init__(self):
-        super().__init__('exploring_node')
+        super().__init__('smooth_explorer_v2')
 
-        # -------- PARAMETERS --------
+        # ---------- PARAMETERS ----------
+        self.goal_has_been_set = False
 
-        self.goal_has_been_set=False #as soon as a goal has been set, exploring stops
+        # Max / min speeds (very gentle for SLAM)
+        self.max_forward = 0.20        # m/s
+        self.min_forward = 0.06        # m/s
+        self.max_turn = 0.30           # rad/s
 
-        self.safe_distance = 0.30          # start avoiding
-        self.resume_distance = 0.40        # hysteresis, start moving forward again
-        self.forward_speed = 0.22
-        self.turn_speed = 0.5
-        self.front_width_deg = 60.0        # field of view for front
-        self.stuck_timeout = 4.0           # seconds turning before escape
-        self.escape_turn = 1.2             # rad/s
-        self.escape_time = 1.5             # seconds backing + turning
+        # Distances (meters)
+        self.safe_dist = 0.45          # start slowing / turning
+        self.clear_dist = 1.0          # considered "far enough"
 
-        # INTERNAL STATE
-        self.mode = "FORWARD"              # FORWARD, AVOID, ESCAPE
-        self.last_switch_time = time.time()
+        # Sector definitions
+        self.front_width_deg = 60.0
+        self.side_width_deg = 80.0
 
-        self.turn_direction = 0.0          # +1 left, -1 right
-        self.turning_start_time = None
+        # Smoothing (low-pass filter on cmd_vel)
+        self.smooth_alpha = 0.25       # between 0 and 1; smaller = smoother
+        self.prev_cmd = Twist()
 
-        # Subscribers & Publishers
+        # For simple stuck detection (no aggressive unstuck!)
+        self.last_progress_time = time.time()
+        self.progress_timeout = 15.0   # s without "free" space → small wiggle
+
+        # ROS I/O
         self.scan_sub = self.create_subscription(
             LaserScan, '/scan', self.scan_callback, 10
         )
-        self.goal_sub=self.create_subscription(PoseStamped,'/goal_pose',self.goal_callback,10)
-
-
+        self.goal_sub = self.create_subscription(
+            PoseStamped, '/goal_pose', self.goal_callback, 10
+        )
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        self.get_logger().info("Improved Explorer node started!")
-        
-    def goal_callback(self, msg: PoseStamped):
-        self.goal_has_been_set=True
-        self.get_logger().info("Goal received, stopping exploration.")
+        self.get_logger().info("Smooth, SLAM-friendly Explorer v2 started.")
 
-    # -------------------------------------------------------
-    #    HELPER: find minimum distance in angle range
-    # -------------------------------------------------------
-    def min_in_sector(self, clean_ranges, scan, angle_from_rad, angle_to_rad):
-        angle_min = scan.angle_min
-        angle_max = scan.angle_max
+    # ---------------------------------------------------
+    def goal_callback(self, msg):
+        # When a goal is set (for Nav2 etc.), stop exploring
+        self.goal_has_been_set = True
+        self.get_logger().warn("Goal received → stopping exploration.")
+        stop = Twist()
+        self.prev_cmd = stop
+        self.cmd_pub.publish(stop)
+
+    # ---------------------------------------------------
+    def min_in_sector(self, arr, scan, a1, a2):
         inc = scan.angle_increment
-        n = len(clean_ranges)
+        n = len(arr)
+        i1 = int((a1 - scan.angle_min) / inc)
+        i2 = int((a2 - scan.angle_min) / inc)
+        i1 = max(0, min(n - 1, i1))
+        i2 = max(0, min(n - 1, i2))
+        if i1 > i2:
+            i1, i2 = i2, i1
+        return float(np.min(arr[i1:i2 + 1]))
 
-        idx_from = int((angle_from_rad - angle_min) / inc)
-        idx_to = int((angle_to_rad - angle_min) / inc)
+    # ---------------------------------------------------
+    def smooth_cmd(self, desired: Twist) -> Twist:
+        """First-order low-pass filter on linear & angular velocity."""
+        out = Twist()
 
-        idx_from = max(0, min(n-1, idx_from))
-        idx_to   = max(0, min(n-1, idx_to))
+        a = self.smooth_alpha
+        prev = self.prev_cmd
 
-        if idx_from > idx_to:
-            idx_from, idx_to = idx_to, idx_from
+        out.linear.x = prev.linear.x + a * (desired.linear.x - prev.linear.x)
+        out.angular.z = prev.angular.z + a * (desired.angular.z - prev.angular.z)
 
-        return float(np.min(clean_ranges[idx_from:idx_to+1]))
+        # Save and return
+        self.prev_cmd = out
+        return out
 
-    # -------------------------------------------------------
-    #    MAIN SCAN CALLBACK
-    # -------------------------------------------------------
+    # ---------------------------------------------------
     def scan_callback(self, scan: LaserScan):
         if self.goal_has_been_set:
-            return  # stop exploring if a goal has been set
-        # clean ranges
-        max_range = scan.range_max if scan.range_max > 0 else 4.0
-        clean_ranges = np.array([
-            r if (not math.isnan(r) and not math.isinf(r)) else max_range
+            # Nav2 / other node should take over
+            return
+
+        # Clean ranges: replace inf/NaN with max range
+        max_r = scan.range_max if scan.range_max > 0 else 4.0
+        arr = np.array([
+            r if (not math.isnan(r) and not math.isinf(r)) else max_r
             for r in scan.ranges
-        ], dtype=float)
+        ])
 
-        # sector angles (convert degrees to radians)
+        # Define sectors in robot frame:
+        #  0 rad = straight ahead, +left, -right
         half_front = math.radians(self.front_width_deg / 2.0)
+        left_start = half_front
+        left_end = left_start + math.radians(self.side_width_deg)
+        right_start = -half_front - math.radians(self.side_width_deg)
+        right_end = -half_front
 
-        front_min = self.min_in_sector(clean_ranges, scan, -half_front, +half_front)
-        left_min  = self.min_in_sector(clean_ranges, scan, +half_front, math.radians(110))
-        right_min = self.min_in_sector(clean_ranges, scan, math.radians(-110), -half_front)
+        front = self.min_in_sector(arr, scan, -half_front, +half_front)
+        left = self.min_in_sector(arr, scan, left_start, left_end)
+        right = self.min_in_sector(arr, scan, right_start, right_end)
 
-        cmd = Twist()
+        # -------------- BASIC SAFETY --------------
+        desired = Twist()
 
-        # ---------------------------------------------------
-        #   STATE MACHINE
-        # ---------------------------------------------------
-
-        now = time.time()
-
-        # -------------------- ESCAPE MODE --------------------
-        if self.mode == "ESCAPE":
-            cmd.linear.x = -0.12     # small reverse
-            cmd.angular.z = self.escape_turn * self.turn_direction
-
-            # escape lasts fixed time
-            if now - self.last_switch_time > self.escape_time:
-                self.mode = "FORWARD"
-                self.get_logger().info("ESCAPE complete → FORWARD")
+        # If everything is extremely close, just stop
+        critical_dist = 0.25
+        if front < critical_dist and left < critical_dist and right < critical_dist:
+            self.get_logger().warn_once("Very close to obstacles → stopping.")
+            # keep desired = 0 (full stop), but smoothed
+            cmd = self.smooth_cmd(desired)
             self.cmd_pub.publish(cmd)
             return
 
-        # -------------------- STUCK DETECTION --------------------
-        # If turning for too long → stuck → escape
-        if self.mode == "AVOID":
-            if self.turning_start_time is None:
-                self.turning_start_time = now
-            if now - self.turning_start_time > self.stuck_timeout:
-                self.get_logger().warn("Detected STUCK → ESCAPE MANEUVER")
-                self.mode = "ESCAPE"
-                self.last_switch_time = now
-                self.cmd_pub.publish(cmd)
-                return
+        # -------------- FORWARD SPEED --------------
+        # Map front distance to forward speed smoothly.
+        # Below safe_dist: slow down strongly, maybe almost stop.
+        if front <= self.safe_dist:
+            speed_scale = 0.1  # almost stopping but not backward
         else:
-            self.turning_start_time = None
+            # Linearly scale between safe_dist and clear_dist
+            d = max(0.0, min(self.clear_dist, front) - self.safe_dist)
+            span = max(0.01, self.clear_dist - self.safe_dist)
+            speed_scale = d / span  # 0..1
 
-        # -------------------- FORWARD MODE --------------------
-        if self.mode == "FORWARD":
-            if front_min < self.safe_distance:
-                self.mode = "AVOID"
-                self.turn_direction = +1 if left_min > right_min else -1
-                self.last_switch_time = now
-                self.get_logger().info(f"Obstacle ahead → AVOID (turn {self.turn_direction})")
-            else:
-                # Move forward normally
-                cmd.linear.x = self.forward_speed
-                self.cmd_pub.publish(cmd)
-                return
+        forward = self.min_forward + speed_scale * (self.max_forward - self.min_forward)
+        forward = max(0.0, min(self.max_forward, forward))
+        desired.linear.x = forward
 
-        # -------------------- AVOID MODE --------------------
-        if self.mode == "AVOID":
-            # Check if we can resume forward motion (hysteresis)
-            if front_min > self.resume_distance:
-                self.mode = "FORWARD"
-                self.get_logger().info("Clear path → FORWARD")
-                cmd.linear.x = self.forward_speed
-                self.cmd_pub.publish(cmd)
-                return
+        # -------------- TURNING (SMOOTH) --------------
+        # 1) Steer away from closer side (left vs right)
+        # Larger distance = more free space = steer that way
+        side_diff = left - right  # >0 → more free on left
+        max_diff = 1.0  # meters; used for normalizing
 
-            # turn away from obstacle
-            cmd.linear.x = 0.0
-            cmd.angular.z = self.turn_speed * self.turn_direction
-            self.cmd_pub.publish(cmd)
-            return
+        side_term = max(-1.0, min(1.0, side_diff / max_diff))
+        side_turn_gain = 0.25 * self.max_turn
+        turn_from_sides = side_turn_gain * side_term  # ± about 0.25*max_turn
+
+        # 2) Stronger turn if front is close, toward the freer side
+        if front < self.safe_dist:
+            front_scale = 1.0 - (front / max(self.safe_dist, 0.01))
+            front_scale = max(0.0, min(1.0, front_scale))
+            dir_sign = +1.0 if left > right else -1.0
+            front_turn_gain = 0.75 * self.max_turn
+            turn_from_front = dir_sign * front_turn_gain * front_scale
+        else:
+            turn_from_front = 0.0
+
+        turn = turn_from_sides + turn_from_front
+
+        # If we are very free ahead and sides balanced, keep turn small
+        if front > self.clear_dist and abs(side_diff) < 0.1:
+            turn *= 0.3
+
+        # Final clamp
+        desired.angular.z = max(-self.max_turn, min(self.max_turn, turn))
+
+        # -------------- SIMPLE "STUCK" HANDLING --------------
+        # If we haven't seen "good" free space in a while, add a gentle bias
+        now = time.time()
+        if front > 0.9 * self.clear_dist:
+            self.last_progress_time = now
+
+        if now - self.last_progress_time > self.progress_timeout:
+            # Tiny wiggle to break symmetry (won't spin aggressively)
+            self.get_logger().info("Likely stuck in a local pattern → gentle bias turn.")
+            desired.angular.z += 0.15  # small constant left bias
+            desired.angular.z = max(-self.max_turn, min(self.max_turn, desired.angular.z))
+
+        # -------------- SMOOTH & PUBLISH --------------
+        cmd = self.smooth_cmd(desired)
+        self.cmd_pub.publish(cmd)
 
 
 def main(args=None):

@@ -56,6 +56,14 @@ Exploration phase:
 -as soon as a goal pose is published, A* plans a route there based on the map. 
 
 TODO: 
--Test system more and confirm graph based navigation
--Add Monte Carlo Localization?
--Add dynamic obstacles and think of ways to avoid them and predict their behavior
+-Static Map Completed:
+A full static map of the environment has been successfully generated using SLAM. The resulting map, named map_best_run, can be saved, reloaded, and used independently of the SLAM process.
+
+Localization Progress (AMCL):
+Monte Carlo Localization is partially working. AMCL receives the map_best_run map and laser data, but there are still timing and TF-related issues causing inconsistent initialization and message filtering problems.
+
+Navigation Not Functional Yet:
+The navigation stack (Nav2) cannot run reliably at this stage because localization is not fully stable. Path planning and controller functions do not work yet due to the remaining bugs in AMCL and TF.
+
+Dynamic Obstacles Not Implemented:
+No dynamic obstacle layers or real-time obstacle detection have been added yet. Navigation currently depends only on the static map_best_run map.

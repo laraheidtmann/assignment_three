@@ -71,16 +71,25 @@ Solid {
     size 1 0.2 0.3
   }
 }
-
 TurtleBot3Burger {
-  name "turtlebot3_burger"
-  translation 0 0 0 
+  translation 6.36 0 0
   controller "<extern>"
   controllerArgs [
     ""
   ]
+  extensionSlot [
+    Solid {
+      name "imu_link"
+    }
+    GPS {
+    }
+    InertialUnit {
+      name "inertial_unit"
+    }
+    RobotisLds01 {
+    }
+  ]
 }
-
 # Static obstacle
 Solid {
   translation 1.0 0 0.1
