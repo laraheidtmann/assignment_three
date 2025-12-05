@@ -58,10 +58,11 @@ class GraphNavigator(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         qos_map = QoSProfile(
-            depth=1,
             reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            depth=1
         )
+
 
         # Subscribers / Publishers / Timer
         self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, qos_map)

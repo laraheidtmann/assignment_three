@@ -17,7 +17,7 @@ colcon build
 ```
 source install/setup.bash
 ```
-4. Run slam_toolbox in a different terminal:
+4. Run slam_toolbox in a different terminal (only if you want to create a new map which we are currently not doing):
 ```
 ros2 launch slam_toolbox online_async_launch.py
 ```
@@ -25,7 +25,24 @@ ros2 launch slam_toolbox online_async_launch.py
 ```
 ros2 launch assignment_three_pkg robot_launch_full.py
 ```
-6. After ~5min publish a goal:
+6. Set the initial position (needed for AMCL)
+```
+ ros2 topic pub -r 1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped "header:
+  frame_id: 'map'
+pose:
+  pose:
+    position:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+  covariance: [0.25, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]" -1
+```
+6. Publish a goal:
 
 for example:
 ```
@@ -34,8 +51,8 @@ header:
   frame_id: 'map'
 pose:
   position:
-    x: 0.0
-    y: 0.0
+    x: 1.0
+    y: 2.0
     z: 0.0
   orientation:
     x: 0.0
@@ -48,6 +65,23 @@ pose:
 ```
  ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/mnt/c/Users/joerg/my_slam_map/my_map'}}"
 
+```
+8. To start navigation, AMCL needs an initial pose. It can either be set in RVIZ or manually by publishing on the initial pose topic: 
+```
+ros2 topic pub -r 1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped "header:
+  frame_id: 'map'
+pose:
+  pose:
+    position:
+      x: 6.36
+      y: 0.0
+      z: 0.0
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+  covariance: [0.25, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]" -1
 ```
 Summary of what the project does:
 Exploration phase:

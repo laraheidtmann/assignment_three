@@ -3,14 +3,12 @@ from setuptools import find_packages, setup
 package_name = 'assignment_three_pkg'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
-data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch_full.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_big.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
-data_files.append(('share/' + package_name + '/config', ['config/diff_drive_controller.yaml']))
 data_files.append(('share/' + package_name + '/resource', [
     'resource/turtlebot3_burger_example_map.pgm',
     'resource/turtlebot3_burger_example_map.yaml',
