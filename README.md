@@ -63,21 +63,46 @@ pose:
 ```
 8. save the maps for debugging using:
 ```
- ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/mnt/c/Users/joerg/my_slam_map/my_map'}}"
-
-
 ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/lara/ros2_ws/src/assignment_three_pkg/slam_maps'}}"
-
 
 ```
 
-Summary of what the project does:
+9. To start navigation, AMCL needs an initial pose. It can either be set in RVIZ or manually by publishing on the initial pose topic: 
+```
+ros2 topic pub -r 1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped "header:
+  frame_id: 'map'
+pose:
+  pose:
+    position:
+      x: 6.36
+      y: 0.0
+      z: 0.0
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+  covariance: [0.25, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]" -1
+```
+
+
+## Start RViz Visualization
+1. Start RViz using the command `rviz2`
+2. Under Global Options, set Fixed Frame = map
+3. Add the topic /map. Under Topic, set Durability Policy = Transient Local -> the map will appear
+4. Add more topics, e.g. /scan to vizualize the LaserScan, /initialpose or /goal_pose
+
+-> If there are new initial poses or goal poses are published, it will show up
+
+
+
+## Summary of what the project does:
 Exploration phase:
 -reactive controller lets robot drive around environment randomly
 -slam_toolbox builds a map while robot drives around
 -as soon as a goal pose is published, A* plans a route there based on the map. 
 
-TODO: 
+## TODO: 
 -Static Map Completed:
 A full static map of the environment has been successfully generated using SLAM. The resulting map, named map_best_run, can be saved, reloaded, and used independently of the SLAM process.
 
