@@ -71,6 +71,7 @@ def generate_launch_description():
 
         }]
     )
+    
     lifecycle_manager=Node(
         package="nav2_lifecycle_manager",
         executable="lifecycle_manager",
@@ -99,6 +100,7 @@ def generate_launch_description():
         output='screen',
         arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_footprint'],
     )
+    
 
     # ROS control spawners
     controller_manager_timeout = ['--controller-manager-timeout', '50']
@@ -172,13 +174,14 @@ def generate_launch_description():
         nodes_to_start=navigation_nodes + ros_control_spawners
     )
     
-    #reactive node that explores the environment
+    # Reactive node that explores the environment
     exploring_node = Node(
             package='assignment_three_pkg',
             name='exploring_node',
             executable='exploring_node'
     )
-    # node that does path planning 
+    
+    # Node that does path planning 
     navigating_node = Node(
             package='assignment_three_pkg',
             name='navigating_node',
@@ -191,7 +194,14 @@ def generate_launch_description():
                 'base_frame_id':'base_footprint',
                 'use_sim_time': True
             }]
-
+    )
+    
+    # Node that automatically sets the initial pose for AMCL
+    initial_pose_publisher = Node(
+        package='assignment_three_pkg',
+        executable='set_initial_pose',
+        name='initial_pose_publisher',
+        output='screen'
     )
 
 
@@ -223,6 +233,7 @@ def generate_launch_description():
         map_server,
         amcl_node,
         lifecycle_manager,
+        initial_pose_publisher,
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(
