@@ -7,7 +7,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
 from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
 from tf2_ros import Buffer, TransformListener
 import numpy as np
 from rclpy.time import Time
@@ -21,6 +21,9 @@ GridIndex = Tuple[int, int]
 class GraphNavigator(Node):
     def __init__(self):
         super().__init__('graph_navigator')
+        
+        ros_distro = os.environ.get("ROS_DISTRO", "")
+        self.use_twist_stamped = ros_distro in ["rolling", "jazzy", "kilted"]
 
         # Parameters
         self.declare_parameter('map_topic', '/map')
@@ -67,7 +70,10 @@ class GraphNavigator(Node):
         # Subscribers / Publishers / Timer
         self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, qos_map)
         self.goal_sub = self.create_subscription(PoseStamped, self.goal_topic, self.goal_callback, 10)
-        self.cmd_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
+        if self.use_twist_stamped:
+            self.cmd_pub = self.create_publisher(TwistStamped, "/cmd_vel", 10)
+        else:
+            self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
         self.timer = self.create_timer(0.05, self.control_loop)
 
         self.get_logger().info(
@@ -291,7 +297,11 @@ class GraphNavigator(Node):
         # If finished
         if self.current_waypoint_index >= len(self.path):
             self.path = []
-            self.cmd_pub.publish(Twist())  # stop
+            if self.use_twist_stamped:
+                self.cmd_pub.publish(TwistStamped())  # stop
+            else:
+                self.cmd_pub.publish(Twist())  # stop
+            
             self.get_logger().info("Reached goal.")
             return
 
@@ -307,17 +317,29 @@ class GraphNavigator(Node):
             self.current_waypoint_index += 1
             return
 
-        twist = Twist()
         # If heading error large, rotate in place
+        angular_z = 0.0
+        linear_x = 0.0
         if abs(angle_error) > math.radians(20.0):
-            twist.angular.z = self.angular_speed * (1.0 if angle_error > 0 else -1.0)
-            twist.linear.x = 0.0
+            angular_z = self.angular_speed * (1.0 if angle_error > 0 else -1.0)
+            linear_x = 0.0
         else:
             # proportional angular velocity and constant linear
-            twist.angular.z = max(-self.angular_speed, min(self.angular_speed, 2.0 * angle_error))
-            twist.linear.x = self.linear_speed
+            angular_z = max(-self.angular_speed, min(self.angular_speed, 2.0 * angle_error))
+            linear_x = self.linear_speed
+        
+        if self.use_twist_stamped:
+            twist_stamped = TwistStamped()
+            twist_stamped.header.stamp = self.get_clock().now().to_msg()
+            twist_stamped.twist.linear.x = linear_x
+            twist_stamped.twist.angular.z = angular_z
+            self.cmd_pub.publish(twist_stamped)
+        else:
+            twist = Twist()
+            twist.linear.x = linear_x
+            twist.angular.z = angular_z
+            self.cmd_pub.publish(twist)
 
-        self.cmd_pub.publish(twist)
 
     # ---------------- Utilities ----------------
     @staticmethod
