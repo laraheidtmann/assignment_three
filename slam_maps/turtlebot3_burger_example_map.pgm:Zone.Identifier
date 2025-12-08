@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://github.com/cyberbotics/webots_ros2/blob/master/webots_ros2_turtlebot/resource/turtlebot3_burger_example_map.pgm
+HostUrl=https://raw.githubusercontent.com/cyberbotics/webots_ros2/refs/heads/master/webots_ros2_turtlebot/resource/turtlebot3_burger_example_map.pgm

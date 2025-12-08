@@ -36,51 +36,15 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     mode = LaunchConfiguration('mode')
     use_nav = LaunchConfiguration('nav', default=False)
-    use_slam = LaunchConfiguration('slam', default=False)
+    use_slam = LaunchConfiguration('slam', default=True)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
-    map_yaml=os.path.join(package_dir, 'slam_maps', 'map_best_run.yaml')
+    robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
+
 
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
         mode=mode,
         ros2_supervisor=True
-    )
-    map_server=Node(
-        package="nav2_map_server",
-        executable="map_server",
-        name="map_server",
-        output="screen",
-        parameters=[{
-            "use_sim_time": True,
-            "yaml_filename": map_yaml,
-        }]
-    )
-    # AMCL node
-    amcl_node = Node(
-        package='nav2_amcl',
-        executable='amcl',
-        name='amcl',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True,
-            'map_topic': '/map',
-            'odom_frame_id': 'odom',
-            'base_frame_id': 'base_footprint',
-            'scan_topic': '/scan',
-            'initial_pose': {'x': 6.36, 'y': 0.0, 'z': 0.0, 'yaw': 0.0}
-
-        }]
-    )
-    lifecycle_manager=Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="lifecycle_manager_map",
-        output="screen",
-        parameters=[{
-            "use_sim_time": True,
-            "autostart": True,
-            "node_names": ["map_server", "amcl"]
-        }]
     )
 
     robot_state_publisher = Node(
@@ -88,7 +52,6 @@ def generate_launch_description():
         executable='robot_state_publisher',
         output='screen',
         parameters=[{
-            'use_sim_time': use_sim_time,
             'robot_description': '<robot name=""><link name=""/></robot>'
         }],
     )
@@ -119,7 +82,6 @@ def generate_launch_description():
     )
     ros_control_spawners = [diffdrive_controller_spawner, joint_state_broadcaster_spawner]
 
-    robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
     ros2_control_params = os.path.join(package_dir, 'resource', 'ros2control.yml')
     use_twist_stamped = 'ROS_DISTRO' in os.environ and (os.environ['ROS_DISTRO'] in ['rolling', 'jazzy', 'kilted'])
     if use_twist_stamped:
@@ -171,37 +133,12 @@ def generate_launch_description():
         target_driver=turtlebot_driver,
         nodes_to_start=navigation_nodes + ros_control_spawners
     )
-    
-    #reactive node that explores the environment
-    exploring_node = Node(
-            package='assignment_three_pkg',
-            name='exploring_node',
-            executable='exploring_node'
-    )
-    # node that does path planning 
-    navigating_node = Node(
-            package='assignment_three_pkg',
-            name='navigating_node',
-            executable='navigating_node',
-            output='screen',
-            parameters=[{
-                'map_topic':'/map',
-                'goal_topic':'/goal_pose',
-                'cmd_vel_topic':'/cmd_vel',
-                'base_frame_id':'base_footprint',
-                'use_sim_time': True
-            }]
-
-    )
-
-
-
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
             default_value='turtlebot3_burger_example.wbt',
-            description='Choose one of the world files from `/assignment_three_pkg/world` directory'
+            description='Choose one of the world files from `/webots_ros2_turtlebot/world` directory'
         ),
         DeclareLaunchArgument(
             'mode',
@@ -216,13 +153,6 @@ def generate_launch_description():
 
         turtlebot_driver,
         waiting_nodes,
-
-        #exploring_node,
-        navigating_node,
-
-        map_server,
-        amcl_node,
-        lifecycle_manager,
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(

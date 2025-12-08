@@ -11,7 +11,7 @@ cd ~/ros2_ws
 
 2. Build:
 ```
-colcon build
+ colcon build --packages-select assignment_three_pkg --symlink-install
 ```
 3. Source the installation
 ```
@@ -42,7 +42,7 @@ pose:
       w: 1.0
   covariance: [0.25, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]" -1
 ```
-6. Publish a goal:
+7. Publish a goal:
 
 for example:
 ```
@@ -61,28 +61,16 @@ pose:
     w: 1.0
 " -1
 ```
-7. save the maps for debugging using:
+8. save the maps for debugging using:
 ```
  ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/mnt/c/Users/joerg/my_slam_map/my_map'}}"
 
+
+ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/lara/ros2_ws/src/assignment_three_pkg/slam_maps'}}"
+
+
 ```
-8. To start navigation, AMCL needs an initial pose. It can either be set in RVIZ or manually by publishing on the initial pose topic: 
-```
-ros2 topic pub -r 1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped "header:
-  frame_id: 'map'
-pose:
-  pose:
-    position:
-      x: 6.36
-      y: 0.0
-      z: 0.0
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-  covariance: [0.25, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]" -1
-```
+
 Summary of what the project does:
 Exploration phase:
 -reactive controller lets robot drive around environment randomly
