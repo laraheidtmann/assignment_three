@@ -29,7 +29,13 @@ ros2 launch slam_toolbox online_async_launch.py
 ros2 launch assignment_three_pkg robot_launch_full.py
 ```
 
-6. Publish a goal:
+6. Save the maps for debugging using:
+```
+ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/lara/ros2_ws/src/assignment_three_pkg/slam_maps'}}"
+
+```
+
+7. Publish a goal:
 for example:
 ```
 ros2 topic pub /goal_pose geometry_msgs/PoseStamped "
@@ -48,29 +54,8 @@ pose:
 " -1
 ```
 
-7. save the maps for debugging using:
-```
-ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/lara/ros2_ws/src/assignment_three_pkg/slam_maps'}}"
 
-```
 
-8. To start navigation, AMCL needs an initial pose. It can either be set in RVIZ or manually by publishing on the initial pose topic: 
-```
-ros2 topic pub -r 1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped "header:
-  frame_id: 'map'
-pose:
-  pose:
-    position:
-      x: 6.36
-      y: 0.0
-      z: 0.0
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-  covariance: [0.25, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]" -1
-```
 
 ## Start RViz Visualization
 1. Start RViz using the command `rviz2`

@@ -15,20 +15,24 @@ class InitialPosePublisher(Node):
         )
 
         # publish once after 4 seconds (give AMCL time to start)
-        self.timer = self.create_timer(4.0, self.publish_initial_pose)
+        self.timer = self.create_timer(5.0, self.publish_initial_pose)
 
     def publish_initial_pose(self):
         msg = PoseWithCovarianceStamped()
         msg.header.frame_id = 'map'
         msg.header.stamp = self.get_clock().now().to_msg()
 
-        msg.pose.pose.position.x = 0.0
-        msg.pose.pose.position.y = 0.0
+        msg.pose.pose.position.x = 0.155
+        msg.pose.pose.position.y = -0.282
         msg.pose.pose.position.z = 0.0
 
-        # quaternion yaw = 0
-        msg.pose.pose.orientation.z = 0.0
-        msg.pose.pose.orientation.w = 1.0
+        # yaw angle from RViz
+        yaw = 0.461328  
+        
+        #msg.pose.pose.orientation.x = 0.0
+        #msg.pose.pose.orientation.y = 0.0
+        msg.pose.pose.orientation.z = math.sin(yaw / 2.0)   # = 0.228624
+        msg.pose.pose.orientation.w = math.cos(yaw / 2.0)   # = 0.973515
 
         # recommended covariance
         msg.pose.covariance = [
