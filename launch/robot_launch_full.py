@@ -38,7 +38,7 @@ def generate_launch_description():
     use_nav = LaunchConfiguration('nav', default=False)
     use_slam = LaunchConfiguration('slam', default=False)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
-    map_yaml=os.path.join(package_dir, 'slam_maps', 'map_best_run.yaml')
+    map_yaml=os.path.join(package_dir, 'slam_maps', 'turtlebot3_burger_example_map.yaml')
 
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),

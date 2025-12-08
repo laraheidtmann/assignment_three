@@ -22,17 +22,17 @@ class InitialPosePublisher(Node):
         msg.header.frame_id = 'map'
         msg.header.stamp = self.get_clock().now().to_msg()
 
-        msg.pose.pose.position.x = 0.155
-        msg.pose.pose.position.y = -0.282
+        msg.pose.pose.position.x = 0.161192
+        msg.pose.pose.position.y = -0.889634
         msg.pose.pose.position.z = 0.0
 
         # yaw angle from RViz
-        yaw = 0.461328  
+        yaw = -0.00666279
         
         #msg.pose.pose.orientation.x = 0.0
         #msg.pose.pose.orientation.y = 0.0
-        msg.pose.pose.orientation.z = math.sin(yaw / 2.0)   # = 0.228624
-        msg.pose.pose.orientation.w = math.cos(yaw / 2.0)   # = 0.973515
+        msg.pose.pose.orientation.z = math.sin(yaw / 2.0)   # = -0.00333139
+        msg.pose.pose.orientation.w = math.cos(yaw / 2.0)   # = 0.999994
 
         # recommended covariance
         msg.pose.covariance = [
