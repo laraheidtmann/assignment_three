@@ -19,8 +19,8 @@ data_files.append(('share/' + package_name + '/worlds', [
     'worlds/turtlebot3_burger_example.wbt', 'worlds/.turtlebot3_burger_example.wbproj',
 ]))
 
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.yaml']))
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.pgm']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map.yaml']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map.pgm']))
 data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/turtlebot3_burger_example_map.yaml']))
 data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/turtlebot3_burger_example_map.pgm']))
 

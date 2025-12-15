@@ -103,7 +103,7 @@ def generate_launch_description():
     # Navigation
     navigation_nodes = []
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
-    nav2_map = os.path.join(package_dir, 'resource', 'turtlebot3_burger_example_map.yaml')
+    nav2_map = os.path.join(package_dir, 'resource', 'my_map.yaml')
     nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
     if 'turtlebot3_navigation2' in get_packages_with_prefixes():
         turtlebot_navigation = IncludeLaunchDescription(

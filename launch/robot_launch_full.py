@@ -38,7 +38,7 @@ def generate_launch_description():
     use_nav = LaunchConfiguration('nav', default=False)
     use_slam = LaunchConfiguration('slam', default=False)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
-    map_yaml=os.path.join(package_dir, 'slam_maps', 'turtlebot3_burger_example_map.yaml')
+    map_yaml=os.path.join(package_dir, 'slam_maps', 'my_map.yaml')
 
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
@@ -143,7 +143,7 @@ def generate_launch_description():
     # Navigation
     navigation_nodes = []
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
-    nav2_map = os.path.join(package_dir, 'resource', 'turtlebot3_burger_example_map.yaml')
+    nav2_map = os.path.join(package_dir, 'resource', 'my_map.yaml')
     nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
     if 'turtlebot3_navigation2' in get_packages_with_prefixes():
         turtlebot_navigation = IncludeLaunchDescription(
