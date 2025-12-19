@@ -11,7 +11,7 @@ cd ~/ros2_ws
 
 2. Build:
 ```
- colcon build --packages-select assignment_three_pkg --symlink-install
+colcon build --packages-select assignment_three_pkg --symlink-install
 ```
 3. Source the installation
 ```
@@ -19,7 +19,7 @@ source install/setup.bash
 ```
 4. Run slam_toolbox in a different terminal (only if you want to create a new map which we are currently not doing):
 ```
-ros2 launch slam_toolbox online_async_launch.py
+ros2 launch slam_toolbox online_async_launch.py use_sim_time:=True
 ```
 5. Run the simulation:
 ```
@@ -63,9 +63,10 @@ pose:
 ```
 8. save the maps for debugging using:
 ```
- ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/mnt/c/Users/joerg/my_slam_map/my_map'}}"
+cartographer:
+ros2 run nav2_map_server map_saver_cli -f my_map   # will be saved from where this command is launched
 
-
+slam_toolbox:
 ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/lara/ros2_ws/src/assignment_three_pkg/slam_maps'}}"
 
 
