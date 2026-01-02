@@ -12,7 +12,7 @@ from tf2_ros import Buffer, TransformListener
 import numpy as np
 from rclpy.time import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-
+import os
 GridIndex = Tuple[int, int]
 
 # graph navigator using A* to navigate through the world. It inflates the obstacles by 
@@ -33,7 +33,7 @@ class GraphNavigator(Node):
         self.declare_parameter('linear_speed', 0.15)
         self.declare_parameter('angular_speed', 0.6)
         self.declare_parameter('waypoint_dist', 0.10)
-        self.declare_parameter('safety_distance', 0.15)  # meters
+        self.declare_parameter('safety_distance', 0.25)  # meters
 
         self.map_topic = self.get_parameter('map_topic').value
         self.goal_topic = self.get_parameter('goal_topic').value
@@ -285,6 +285,9 @@ class GraphNavigator(Node):
         wx, wy = self.path[self.current_waypoint_index]
         dx, dy = wx - x, wy - y
         dist = math.hypot(dx, dy)
+        target_angle = math.atan2(dy, dx)
+        angle_error = self.normalize_angle(target_angle - yaw)
+
 
         if dist < self.waypoint_dist:
             self.current_waypoint_index += 1
