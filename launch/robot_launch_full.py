@@ -38,7 +38,7 @@ def generate_launch_description():
     use_nav = LaunchConfiguration('nav', default=False)
     use_slam = LaunchConfiguration('slam', default=False)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
-    map_yaml=os.path.join(package_dir, 'slam_maps', 'map_best_run.yaml')
+    map_yaml=os.path.join(package_dir, 'slam_maps', 'my_map_game.yaml')
 
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
@@ -143,7 +143,7 @@ def generate_launch_description():
     # Navigation
     navigation_nodes = []
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
-    nav2_map = os.path.join(package_dir, 'resource', 'turtlebot3_burger_example_map.yaml')
+    nav2_map = os.path.join(package_dir, 'resource', 'my_map_game.yaml')
     nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
     if 'turtlebot3_navigation2' in get_packages_with_prefixes():
         turtlebot_navigation = IncludeLaunchDescription(
@@ -210,7 +210,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
-            default_value='turtlebot3_burger_example.wbt',
+            default_value='assignment_three_world.wbt',
             description='Choose one of the world files from `/assignment_three_pkg/world` directory'
         ),
         DeclareLaunchArgument(

@@ -90,7 +90,10 @@ Exploration phase:
 
 # Next TODOs:
 - **Improve map** from SLAM -> use cartographer with default configuration from turtlebot3 tutorial, drive around manually
-- Try out **A* from nav2** instead of custom implementation
+- Try out **A star from nav2** instead of custom implementation
+- Add dynamic obstacles
+- Add dynamic obstacle avoidance (graph based AND potential field)
+
 
 
 ## Backlog: 

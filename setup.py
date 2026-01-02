@@ -10,6 +10,8 @@ data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_big.wb
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
+data_files.append(('share/' + package_name + '/worlds', ['worlds/assignment_three_world.wbt']))
+
 data_files.append(('share/' + package_name + '/resource', [
     'resource/turtlebot_webots.urdf',
     'resource/ros2control.yml',
@@ -17,10 +19,15 @@ data_files.append(('share/' + package_name + '/resource', [
 ]))
 data_files.append(('share/' + package_name + '/worlds', [
     'worlds/turtlebot3_burger_example.wbt', 'worlds/.turtlebot3_burger_example.wbproj',
+    'worlds/assignment_three_world.wbt', 'worlds/.assignment_three_world.wbproj',
+
 ]))
 
 data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.yaml']))
 data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.pgm']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_game.yaml']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_game.pgm']))
+
 
 
 data_files.append(('share/' + package_name, ['package.xml']))
