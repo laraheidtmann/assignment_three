@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import math
 import heapq
+import tf2_geometry_msgs
 from typing import List, Tuple, Optional
-
+from sensor_msgs.msg import LaserScan
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
 from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import PoseStamped, Twist, TwistStamped
+from geometry_msgs.msg import PoseStamped, Twist, TwistStamped, PointStamped
 from tf2_ros import Buffer, TransformListener
 import numpy as np
 from rclpy.time import Time
@@ -55,6 +56,8 @@ class GraphNavigator(Node):
         self.map_width: Optional[int] = None
         self.map_height: Optional[int] = None
         self.inflation_radius_cells: int = 0
+        self.current_goal: Optional[PoseStamped] = None
+        self.current_scan=LaserScan()
 
         # ---------------- Path state ----------------
         self.path: List[Tuple[float, float]] = []
@@ -72,6 +75,7 @@ class GraphNavigator(Node):
 
 
         # Subscribers / Publishers / Timer
+        self.lidar_sub=self.create_subscription(LaserScan,'/scan',self.lidar_callback,10)
         self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, qos_map)
         self.goal_sub = self.create_subscription(PoseStamped, self.goal_topic, self.goal_callback, 10)
         if self.use_twist_stamped:
@@ -79,8 +83,145 @@ class GraphNavigator(Node):
         else:
             self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
         self.timer = self.create_timer(0.05, self.control_loop)
+        self.scan_timer=self.create_timer(1,self.scan_callback)
 
         self.get_logger().info("GraphNavigator with obstacle inflation started")
+        # ---------------- Replan hysteresis ----------------
+        self.block_counter = 0
+        self.block_counter_threshold = 3   # number of consecutive detections required
+
+
+    def lidar_callback(self, scan: LaserScan):
+        self.current_scan=scan
+
+
+
+    # ---------------- Scan handling ----------------
+    def scan_callback(self):
+        if not self.map_received or not hasattr(self, 'current_scan'):
+            return
+
+        if not self.tf_buffer.can_transform('map', self.current_scan.header.frame_id,
+                                            self.current_scan.header.stamp,
+                                            timeout=Duration(seconds=1.0)):
+            self.get_logger().warn(f"Transform from {self.current_scan.header.frame_id} to map not available yet")
+            return
+
+        dynamic_cells = []
+        max_dyn_range = 1.0  # maximum distance to consider dynamic obstacles (meters)
+
+        for i, r in enumerate(self.current_scan.ranges):
+            if math.isinf(r) or math.isnan(r):
+                continue
+            if r < self.current_scan.range_min or r > self.current_scan.range_max:
+                continue
+            if r > max_dyn_range:  # ignore points beyond max dynamic range
+                continue
+
+            angle = self.current_scan.angle_min + i * self.current_scan.angle_increment
+            x_l = r * math.cos(angle)
+            y_l = r * math.sin(angle)
+
+            point_lidar = PointStamped()
+            point_lidar.header.frame_id = self.current_scan.header.frame_id
+            point_lidar.header.stamp = self.current_scan.header.stamp
+            point_lidar.point.x = x_l
+            point_lidar.point.y = y_l
+            point_lidar.point.z = 0.0
+
+            try:
+                point_map = self.tf_buffer.transform(point_lidar, 'map', timeout=Duration(seconds=0.1))
+            except Exception as e:
+                self.get_logger().error(f"TF transform failed: {e}")
+                continue
+
+            grid = self.world_to_grid(point_map.point.x, point_map.point.y)
+            if grid is None:
+                continue
+            ix, iy = grid
+
+            # Only mark if the static map cell is free
+            if self.map_data[iy, ix] < self.obstacle_threshold:
+                dynamic_cells.append((ix, iy))
+
+        self.update_dynamic_map(dynamic_cells)
+
+        # ---------------- Replan hysteresis logic ----------------
+        if self.dynamic_obstacle_blocks_path():
+            self.block_counter += 1
+            self.get_logger().debug(
+                f"Dynamic obstacle on path ({self.block_counter}/"
+                f"{self.block_counter_threshold})"
+            )
+        else:
+            self.block_counter = 0
+
+        # Trigger replanning only after persistent blockage
+        if self.block_counter >= self.block_counter_threshold:
+            self.get_logger().warn("Persistent dynamic obstacle → replanning")
+            self.block_counter = 0
+
+            self.path = []  # invalidate current path
+            if self.current_goal:
+                self.goal_callback(self.current_goal)
+
+
+    def dynamic_obstacle_blocks_path(self) -> bool:
+       #Returns True if any dynamic obstacle lies on the remaining path.
+
+        if not self.path or not hasattr(self, 'dynamic_map'):
+            return False
+
+        # Only check future waypoints
+        for wx, wy in self.path[self.current_waypoint_index:]:
+            grid = self.world_to_grid(wx, wy)
+            if grid is None:
+                continue
+            ix, iy = grid
+
+            # Dynamic obstacle present
+            if self.dynamic_map[iy, ix] > 0:
+                return True
+
+        return False
+
+
+    def update_dynamic_map(self, cells: List[GridIndex]):
+        """Update the dynamic map with current laser scan points."""
+        if not hasattr(self, 'dynamic_map'):
+            self.dynamic_map = np.zeros_like(self.map_data, dtype=np.uint8)
+
+        # Reset dynamic map every scan
+        self.dynamic_map.fill(0)
+
+        for ix, iy in cells:
+            self.dynamic_map[iy, ix] = 100  # mark as occupied
+
+        # Inflate dynamic obstacles with smaller radius than static map
+        dyn_inflation_cells = max(4, int(self.safety_distance / self.map_resolution))
+        self.inflate_dynamic_obstacles(dyn_inflation_cells)
+
+
+    def inflate_dynamic_obstacles(self, inflation_radius_cells: int):
+        """Inflate dynamic obstacles by a small radius."""
+        if inflation_radius_cells <= 0:
+            return
+
+        inflated = np.copy(self.dynamic_map)
+        ys, xs = np.where(self.dynamic_map > 0)
+
+        for cy, cx in zip(ys, xs):
+            for dy in range(-inflation_radius_cells, inflation_radius_cells + 1):
+                for dx in range(-inflation_radius_cells, inflation_radius_cells + 1):
+                    nx = cx + dx
+                    ny = cy + dy
+                    if 0 <= nx < self.map_width and 0 <= ny < self.map_height:
+                        if math.hypot(dx, dy) <= inflation_radius_cells:
+                            inflated[ny, nx] = 100
+
+        self.dynamic_map = inflated
+
+
 
     # ---------------- Map handling ----------------
     def map_callback(self, msg: OccupancyGrid):
@@ -92,6 +233,11 @@ class GraphNavigator(Node):
             msg.info.origin.position.x,
             msg.info.origin.position.y
         )
+        self.dynamic_map = np.zeros(
+            (self.map_height, self.map_width),
+            dtype=np.uint8
+        )
+
 
         self.map_data = np.array(msg.data, dtype=np.int8).reshape(
             (self.map_height, self.map_width)
@@ -149,7 +295,13 @@ class GraphNavigator(Node):
             return False
         if ix < 0 or iy < 0 or ix >= self.map_width or iy >= self.map_height:
             return False
-        return self.inflated_map[iy, ix] < self.obstacle_threshold
+
+        static_free = self.inflated_map[iy, ix] < self.obstacle_threshold
+        dynamic_free =  self.dynamic_map[iy, ix] == 0
+
+        return static_free and dynamic_free
+
+ 
 
     def diagonal_allowed(self, cx, cy, nx, ny) -> bool:
         dx = nx - cx
@@ -174,7 +326,8 @@ class GraphNavigator(Node):
 
     # ---------------- Goal handling ----------------
     def goal_callback(self, msg: PoseStamped):
-        self.get_logger().info("New goal received")
+        self.get_logger().info("New goal received or replanning initiated.")
+        self.current_goal = msg
         if not self.map_received:
             return
 
@@ -315,6 +468,11 @@ class GraphNavigator(Node):
             twist.linear.x = linear_x
             twist.angular.z = angular_z
             self.cmd_pub.publish(twist)
+        # Decay dynamic map over time
+        if hasattr(self, 'dynamic_map'):
+            self.dynamic_map = (self.dynamic_map * 0.9).astype(np.uint8)
+            self.dynamic_map[self.dynamic_map < 5] = 0
+
 
 
     # ---------------- Utilities ----------------

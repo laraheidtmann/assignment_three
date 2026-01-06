@@ -47,6 +47,37 @@ TurtleBot3Burger {
     }
   ]
 }
+Solid {
+  translation 1.28947 0.136485 0.1
+  rotation 0 0 1 4.692820414042842e-06
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+      }
+      geometry Box {
+        size 0.3 0.2 0.3
+      }
+    }
+  ]
+  name "extra_obstacle_1"
+}
+Solid {
+  translation 0.604374 -1.54037 0.1
+  rotation 0 0 1 4.692820414042842e-06
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+      }
+      geometry Box {
+        size 0.6 0.2 0.3
+      }
+    }
+  ]
+  name "extra_obstacle"
+}
+
 
 Solid {
   translation 1.85263 1.06167 0.25
