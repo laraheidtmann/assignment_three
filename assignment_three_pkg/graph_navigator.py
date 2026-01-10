@@ -85,16 +85,164 @@ class GraphNavigator(Node):
         self.timer = self.create_timer(0.05, self.control_loop)
         self.scan_timer=self.create_timer(1,self.scan_callback)
 
-        self.get_logger().info("GraphNavigator with obstacle inflation started")
+        self.get_logger().info("GraphNavigator with dynamic obstacle tracking started")
         # ---------------- Replan hysteresis ----------------
         self.block_counter = 0
         self.block_counter_threshold = 3   # number of consecutive detections required
+        # -------- Dynamic obstacle tracking --------
+        self.tracked_obstacles = {}  
+        # id -> {
+        #   'centroid': (x, y),
+        #   'velocity': (vx, vy),
+        #   'last_seen': time
+        # }
+        self.next_obstacle_id = 0
+        self.max_tracking_distance = 0.5  # meters
+
 
 
     def lidar_callback(self, scan: LaserScan):
         self.current_scan=scan
+    
+    def predict_dynamic_obstacles(self, horizon=1.5, dt=0.2):
+        """
+        Predict future positions of tracked obstacles and update dynamic_map.
+
+        Each obstacle should have:
+            - 'centroid': (x, y) in map frame
+            - 'velocity': (vx, vy)
+            - 'last_seen': timestamp
+        """
+        if not hasattr(self, 'dynamic_map'):
+            self.dynamic_map = np.zeros_like(self.map_data, dtype=np.uint8)
+        else:
+            self.dynamic_map.fill(0)
+
+        predicted_cells = set()
+
+        for obs in self.tracked_obstacles.values():
+            x, y = obs['centroid']
+            vx, vy = obs['velocity']
 
 
+            # Predict positions along the horizon
+            for t in np.arange(0, horizon + dt, dt):
+                x_pred = x + vx * t
+                y_pred = y + vy * t
+
+                # Inflate using a circle around the predicted centroid
+                num_points = max(8, int(2 * math.pi * self.safety_distance / self.map_resolution))
+                for theta in np.linspace(0, 2 * math.pi, num_points, endpoint=False):
+                    xr = x_pred + self.safety_distance * math.cos(theta)
+                    yr = y_pred + self.safety_distance * math.sin(theta)
+                    grid = self.world_to_grid(xr, yr)
+                    if grid is not None:
+                        predicted_cells.add(grid)
+
+        # Fill predicted cells into dynamic map
+        for ix, iy in predicted_cells:
+            self.dynamic_map[iy, ix] = 100  # mark as occupied
+
+
+    def update_tracked_obstacles(self, centroids, stamp):
+        """
+        Update self.tracked_obstacles with new centroids, estimate velocity.
+        centroids: list of (x, y) in map frame
+        stamp: ROS time of the scan
+        """
+        max_dist = 0.5  # meters, max distance to match previous obstacle
+        new_tracked = {}
+
+        # Keep track of which old IDs have been matched
+        matched_ids = set()
+
+        # --- 1. Try to match each centroid to existing obstacles ---
+        for cx, cy in centroids:
+            best_id = None
+            best_dist = float('inf')
+
+            for oid, obs in self.tracked_obstacles.items():
+                ox, oy = obs['centroid']
+                dist = math.hypot(cx - ox, cy - oy)
+                if dist < max_dist and dist < best_dist:
+                    best_dist = dist
+                    best_id = oid
+
+            if best_id is not None:
+                # Matched an existing obstacle → update velocity
+                obs = self.tracked_obstacles[best_id]
+                dt = (stamp.sec + stamp.nanosec * 1e-9) - (obs['last_seen'].sec + obs['last_seen'].nanosec * 1e-9)
+                dt = max(dt, 1e-3)  # avoid division by zero
+
+                vx = (cx - obs['centroid'][0]) / dt
+                vy = (cy - obs['centroid'][1]) / dt
+
+                new_tracked[best_id] = {
+                    'centroid': (cx, cy),
+                    'velocity': (vx, vy),
+                    'last_seen': stamp
+                }
+                matched_ids.add(best_id)
+
+            else:
+                # New obstacle → assign new ID
+                oid = self.next_obstacle_id
+                self.next_obstacle_id += 1
+                new_tracked[oid] = {
+                    'centroid': (cx, cy),
+                    'velocity': (0.0, 0.0),
+                    'last_seen': stamp
+                }
+
+        # --- 2. Keep unmatched old obstacles for short time ---
+        now = stamp.sec + stamp.nanosec * 1e-9
+        for oid, obs in self.tracked_obstacles.items():
+            if oid in matched_ids:
+                continue
+            obs_time = obs['last_seen'].sec + obs['last_seen'].nanosec * 1e-9
+            if now - obs_time < 1.0:  # keep for 1 second if lost
+                new_tracked[oid] = obs
+
+        self.tracked_obstacles = new_tracked
+
+
+    def compute_centroid(self, cluster):
+        xs = [p[0] for p in cluster]
+        ys = [p[1] for p in cluster]
+        return (sum(xs) / len(xs), sum(ys) / len(ys))
+
+    def cluster_points(self, points, cluster_dist=0.25):
+        """
+        Simple distance-based clustering.
+        points: List[(x, y)] in map frame
+        cluster_dist: max distance between points in same cluster (meters)
+        """
+        clusters = []
+        used = [False] * len(points)
+
+        for i, (x_i, y_i) in enumerate(points):
+            if used[i]:
+                continue
+
+            cluster = [(x_i, y_i)]
+            used[i] = True
+
+            changed = True
+            while changed:
+                changed = False
+                for j, (x_j, y_j) in enumerate(points):
+                    if used[j]:
+                        continue
+                    for (cx, cy) in cluster:
+                        if math.hypot(x_j - cx, y_j - cy) <= cluster_dist:
+                            cluster.append((x_j, y_j))
+                            used[j] = True
+                            changed = True
+                            break
+
+            clusters.append(cluster)
+
+        return clusters
 
     # ---------------- Scan handling ----------------
     def scan_callback(self):
@@ -108,6 +256,8 @@ class GraphNavigator(Node):
             return
 
         dynamic_cells = []
+        points_map = []
+
         max_dyn_range = 1.0  # maximum distance to consider dynamic obstacles (meters)
 
         for i, r in enumerate(self.current_scan.ranges):
@@ -135,6 +285,9 @@ class GraphNavigator(Node):
                 self.get_logger().error(f"TF transform failed: {e}")
                 continue
 
+            points_map.append((point_map.point.x, point_map.point.y))
+
+
             grid = self.world_to_grid(point_map.point.x, point_map.point.y)
             if grid is None:
                 continue
@@ -144,7 +297,20 @@ class GraphNavigator(Node):
             if self.map_data[iy, ix] < self.obstacle_threshold:
                 dynamic_cells.append((ix, iy))
 
-        self.update_dynamic_map(dynamic_cells)
+        #self.update_dynamic_map(dynamic_cells)
+
+        # ---- CLUSTER POINTS ----
+        clusters = self.cluster_points(points_map, cluster_dist=0.25)
+
+        centroids = []
+        for cluster in clusters:
+            if len(cluster) < 5:
+                continue  # reject noise
+            centroids.append(self.compute_centroid(cluster))
+        self.update_tracked_obstacles(centroids, self.current_scan.header.stamp)
+
+        self.predict_dynamic_obstacles(horizon=1.5, dt=0.2)
+
 
         # ---------------- Replan hysteresis logic ----------------
         if self.dynamic_obstacle_blocks_path():
@@ -359,8 +525,8 @@ class GraphNavigator(Node):
             return
             
         cell_path = self.a_star(start, goal_idx)
-        self.get_logger().info("Path planned")
         self.path = [self.grid_to_world(ix, iy) for ix, iy in cell_path]
+        self.get_logger().info("Path planned")
         self.current_waypoint_index = 0
 
     # ---------------- A* ----------------
@@ -413,7 +579,8 @@ class GraphNavigator(Node):
 
         try:
             tf = self.tf_buffer.lookup_transform('map', self.base_frame_id, Time())
-        except Exception:
+        except Exception as e:
+            self.get_logger().info("TF lookup failed in control loop.")
             return
         x = tf.transform.translation.x
         y = tf.transform.translation.y
@@ -433,7 +600,6 @@ class GraphNavigator(Node):
             
             self.get_logger().info("Reached goal.")
             return
-
 
         wx, wy = self.path[self.current_waypoint_index]
         dx, dy = wx - x, wy - y
