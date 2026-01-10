@@ -67,7 +67,7 @@ def generate_launch_description():
             'odom_frame_id': 'odom',
             'base_frame_id': 'base_footprint',
             'scan_topic': '/scan',
-            'initial_pose': {'x': 6.36, 'y': 0.0, 'z': 0.0, 'yaw': 0.0}
+            'initial_pose': {'x': 0.163384, 'y': 0.163382, 'z': 0.0, 'yaw': 0.0}
 
         }]
     )

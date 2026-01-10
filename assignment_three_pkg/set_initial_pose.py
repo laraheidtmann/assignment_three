@@ -22,8 +22,8 @@ class InitialPosePublisher(Node):
         msg.header.frame_id = 'map'
         msg.header.stamp = self.get_clock().now().to_msg()
 
-        msg.pose.pose.position.x = 0.0
-        msg.pose.pose.position.y = 0.0
+        msg.pose.pose.position.x = 0.163384
+        msg.pose.pose.position.y = 0.163382
         msg.pose.pose.position.z = 0.0
 
         # quaternion yaw = 0
