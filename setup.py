@@ -1,3 +1,6 @@
+import os
+from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = 'assignment_three_pkg'
@@ -28,6 +31,19 @@ data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_ga
 
 
 data_files.append(('share/' + package_name, ['package.xml']))
+
+
+def _add_tree(data_files_list, root_dir: str) -> None:
+    """Install a directory tree under share/<package_name>/<root_dir> preserving layout."""
+    for path in glob(os.path.join(root_dir, '**', '*'), recursive=True):
+        if not os.path.isfile(path):
+            continue
+        install_dir = os.path.join('share', package_name, os.path.dirname(path))
+        data_files_list.append((install_dir, [path]))
+
+
+# Webots expects controllers at <project>/controllers/<controller_name>/...
+_add_tree(data_files, 'controllers')
 
 setup(
     name=package_name,

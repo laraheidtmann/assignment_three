@@ -29,6 +29,10 @@ ros2 launch slam_toolbox online_async_launch.py use_sim_time:=True
 ros2 launch assignment_three_pkg robot_launch_full.py
 ```
 
+Note: Dynamic obstacles are driven by a Webots Supervisor controller (`dynamic_obstacles_controller`).
+If obstacles move on one machine but not another, rebuild with `colcon build --symlink-install` and re-source,
+so the package share contains the `controllers/` folder required by Webots.
+
 6. Save the maps for debugging using:
 ```
 ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "{name: {data: '/home/lara/ros2_ws/src/assignment_three_pkg/slam_maps'}}"
