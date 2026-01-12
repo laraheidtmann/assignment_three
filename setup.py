@@ -45,6 +45,10 @@ def _add_tree(data_files_list, root_dir: str) -> None:
 # Webots expects controllers at <project>/controllers/<controller_name>/...
 _add_tree(data_files, 'controllers')
 
+# Some setups resolve the Webots project root as the `worlds/` directory.
+# In that case Webots looks for controllers under `worlds/controllers/...`.
+_add_tree(data_files, os.path.join('worlds', 'controllers'))
+
 setup(
     name=package_name,
     version='0.0.0',
