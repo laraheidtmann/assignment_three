@@ -70,6 +70,7 @@ setup(
             'exploring_node = assignment_three_pkg.exploring_node_improved:main',
             'navigating_node = assignment_three_pkg.graph_navigator:main',
             'set_initial_pose = assignment_three_pkg.set_initial_pose:main',
+            'metric_logger = assignment_three_pkg.metric_logger:main',
         ],
     },
 )
