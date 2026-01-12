@@ -7,10 +7,6 @@ data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch_fu
 data_files.append(('share/' + package_name + '/launch', ['launch/launch_map_building.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/nav2_launch.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_big.wbt']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.wbt']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/assignment_three_world.wbt']))
 
 data_files.append(('share/' + package_name + '/resource', [
