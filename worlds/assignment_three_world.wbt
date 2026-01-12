@@ -21,7 +21,7 @@ TexturedBackgroundLight {
 }
 Robot {
   name "ObstaclesSupervisor"
-  controller "dynamic_obstacles_controller"
+  controller "<extern>"
   supervisor TRUE
 }
 RectangleArena {

@@ -29,9 +29,9 @@ ros2 launch slam_toolbox online_async_launch.py use_sim_time:=True
 ros2 launch assignment_three_pkg robot_launch_full.py
 ```
 
-Note: Dynamic obstacles are driven by a Webots Supervisor controller (`dynamic_obstacles_controller`).
-If obstacles move on one machine but not another, rebuild with `colcon build --symlink-install` and re-source,
-so the package share contains the `controllers/` folder required by Webots.
+Note: Dynamic obstacles are driven by an external Webots Supervisor controller process.
+This avoids Webots “controller directory not found” issues (common when running Webots on Windows via WSL).
+After pulling changes, rebuild with `colcon build --symlink-install` and re-source.
 
 6. Save the maps for debugging using:
 ```

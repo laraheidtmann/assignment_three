@@ -4,13 +4,15 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions.path_join_substitution import PathJoinSubstitution
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess, TimerAction
 import launch
-from ament_index_python.packages import get_package_share_directory, get_packages_with_prefixes
+from ament_index_python.packages import get_package_share_directory, get_packages_with_prefixes, get_package_prefix
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.actions import IncludeLaunchDescription
 from webots_ros2_driver.webots_launcher import WebotsLauncher
 from webots_ros2_driver.webots_controller import WebotsController
 from webots_ros2_driver.wait_for_controller_connection import WaitForControllerConnection
+from webots_ros2_driver.utils import controller_url_prefix
 
 
 def generate_launch_description():
@@ -24,6 +26,23 @@ def generate_launch_description():
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
         mode=mode,
         ros2_supervisor=True
+    )
+
+    obstacles_controller_script = os.path.join(
+        package_dir, 'controllers', 'dynamic_obstacles_controller', 'dynamic_obstacles_controller.py'
+    )
+    obstacles_supervisor_controller = ExecuteProcess(
+        output='screen',
+        cmd=['python3', obstacles_controller_script],
+        additional_env={
+            'WEBOTS_CONTROLLER_URL': controller_url_prefix('1234') + 'ObstaclesSupervisor',
+            'WEBOTS_HOME': get_package_prefix('webots_ros2_driver'),
+        },
+        respawn=True,
+    )
+    obstacles_supervisor_controller_delayed = TimerAction(
+        period=2.0,
+        actions=[obstacles_supervisor_controller],
     )
 
     robot_state_publisher = Node(
@@ -115,6 +134,8 @@ def generate_launch_description():
         ),
         webots,
         webots._supervisor,
+
+        obstacles_supervisor_controller_delayed,
 
         robot_state_publisher,
         footprint_publisher,
