@@ -11,6 +11,8 @@ data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_big.wb
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world_test.wbt']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde.obj']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/tilde_big.obj']))
+data_files.append(('share/' + package_name + '/worlds', ['worlds/assignment_three_world.wbt']))
+
 data_files.append(('share/' + package_name + '/resource', [
     'resource/turtlebot_webots.urdf',
     'resource/ros2control.yml',
@@ -18,12 +20,15 @@ data_files.append(('share/' + package_name + '/resource', [
 ]))
 data_files.append(('share/' + package_name + '/worlds', [
     'worlds/turtlebot3_burger_example.wbt', 'worlds/.turtlebot3_burger_example.wbproj',
+    'worlds/assignment_three_world.wbt', 'worlds/.assignment_three_world.wbproj',
+
 ]))
 
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map.yaml']))
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map.pgm']))
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/turtlebot3_burger_example_map.yaml']))
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/turtlebot3_burger_example_map.pgm']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.yaml']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.pgm']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_game.yaml']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_game.pgm']))
+
 
 
 data_files.append(('share/' + package_name, ['package.xml']))
@@ -46,7 +51,7 @@ setup(
             'robot_controller = assignment_three_pkg.robot_controller:main',
             'odom_calculator = assignment_three_pkg.odom_calculator:main',
             'occupancy_grid = assignment_three_pkg.occupancy_grid_node:main',
-            'exploring_node = assignment_three_pkg.exploring_node:main',
+            'exploring_node = assignment_three_pkg.exploring_node_improved:main',
             'navigating_node = assignment_three_pkg.graph_navigator:main',
             'set_initial_pose = assignment_three_pkg.set_initial_pose:main',
         ],

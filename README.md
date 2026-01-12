@@ -11,7 +11,7 @@ cd ~/ros2_ws
 
 2. Build:
 ```
- colcon build --packages-select assignment_three_pkg --symlink-install
+colcon build --packages-select assignment_three_pkg --symlink-install
 ```
 
 3. Source the installation
@@ -21,7 +21,7 @@ source install/setup.bash
 
 4. Run slam_toolbox in a different terminal (only if you want to create a new map which we are currently not doing):
 ```
-ros2 launch slam_toolbox online_async_launch.py
+ros2 launch slam_toolbox online_async_launch.py use_sim_time:=True
 ```
 
 5. Run the simulation:
@@ -75,7 +75,10 @@ Exploration phase:
 
 # Next TODOs:
 - **Improve map** from SLAM -> use cartographer with default configuration from turtlebot3 tutorial, drive around manually
-- Try out **A* from nav2** instead of custom implementation
+- Try out **A star from nav2** instead of custom implementation
+- Add dynamic obstacles
+- Add dynamic obstacle avoidance (graph based AND potential field)
+
 
 
 ## Backlog: 
