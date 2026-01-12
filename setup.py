@@ -24,8 +24,8 @@ data_files.append(('share/' + package_name + '/worlds', [
 
 ]))
 
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.yaml']))
-data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/map_best_run.pgm']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map.yaml']))
+data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map.pgm']))
 data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_game.yaml']))
 data_files.append(('share/' + package_name + '/slam_maps', ['slam_maps/my_map_game.pgm']))
 
