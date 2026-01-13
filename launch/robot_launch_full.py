@@ -235,7 +235,15 @@ def generate_launch_description():
         output='screen'
     )
 
-
+    metric_logger = Node(
+        package='assignment_three_pkg',
+        executable='metric_logger',
+        name='metric_logger',
+        output='screen',
+        parameters=[{
+            'scenario_id': 'custom_nav',
+        }]
+    )
 
 
     return LaunchDescription([

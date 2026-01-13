@@ -1,4 +1,4 @@
-#VRML_SIM R2023b utf8
+#VRML_SIM R2025a utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/robots/robotis/turtlebot/protos/TurtleBot3Burger.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/devices/robotis/protos/RobotisLds01.proto"
@@ -10,10 +10,9 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projec
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.45768575786293125 0.005904243111678026 0.8890944195993541 3.1186608252574795
-  position 5.468409003631041 -0.7073418167608152 6.943890329868631
+  orientation -0.4709781828237027 -0.0009893393223353027 0.8821443036781388 3.1453047273115575
+  position 5.282256951361424 -0.5764348474548668 7.072794617940131
   follow "TurtleBot3Burger:LDS-01"
-
 }
 TexturedBackground {
 }
@@ -52,9 +51,14 @@ TurtleBot3Burger {
     }
   ]
 }
+<<<<<<< HEAD
 
 DEF DYNAMIC_OBS_2 Solid {
   translation 1.0 0.0 0.10
+=======
+DEF DYNAMIC_OBS_1 Solid {
+  translation 0.679716 -0.00279969 0.1
+>>>>>>> fd1c7b96e1c751574299df529f33759e250dfc44
   children [
     Shape {
       appearance PBRAppearance {
@@ -75,9 +79,14 @@ DEF DYNAMIC_OBS_2 Solid {
     mass 1
   }
 }
+<<<<<<< HEAD
 
 DEF DYNAMIC_OBS_4 Solid {
   translation -1.0 0.5 0.10
+=======
+DEF DYNAMIC_OBS_2 Solid {
+  translation 0.0407063 1.22666 0.1
+>>>>>>> fd1c7b96e1c751574299df529f33759e250dfc44
   children [
     Shape {
       appearance PBRAppearance {
@@ -98,30 +107,6 @@ DEF DYNAMIC_OBS_4 Solid {
     mass 1
   }
 }
-
-DEF DYNAMIC_OBS_5 Solid {
-  translation 1.6 -1.5 0.10
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 0 0
-        metalness 0
-      }
-      geometry Box {
-        size 0.2 0.2 0.2
-      }
-    }
-  ]
-  name "dynamic_obstacle_5"
-  boundingObject Box {
-    size 0.2 0.2 0.2
-  }
-  physics Physics {
-    density -1
-    mass 1
-  }
-}
-
 Solid {
   translation 1.85263 1.06167 0.25
   children [

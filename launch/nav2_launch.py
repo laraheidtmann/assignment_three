@@ -120,6 +120,17 @@ def generate_launch_description():
         target_driver=turtlebot_driver,
         nodes_to_start=navigation_nodes + ros_control_spawners
     )
+    
+    
+    metric_logger = Node(
+        package='assignment_three_pkg',
+        executable='metric_logger',
+        name='metric_logger',
+        output='screen',
+        parameters=[{
+            'scenario_id': 'nav2_nav',
+        }]
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -142,6 +153,9 @@ def generate_launch_description():
 
         turtlebot_driver,
         waiting_nodes,
+
+        metric_logger,
+
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(
