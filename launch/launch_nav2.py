@@ -121,14 +121,15 @@ def generate_launch_description():
         nodes_to_start=navigation_nodes + ros_control_spawners
     )
     
-    
     metric_logger = Node(
         package='assignment_three_pkg',
         executable='metric_logger',
         name='metric_logger',
         output='screen',
         parameters=[{
-            'scenario_id': 'nav2_nav',
+            'scenario_id': 'nav2',
+            'use_nav2': True,
+            'use_sim_time': True
         }]
     )
 
@@ -154,7 +155,6 @@ def generate_launch_description():
         waiting_nodes,
 
         metric_logger,
-
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(

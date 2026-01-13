@@ -233,6 +233,8 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'scenario_id': 'custom_nav',
+            'use_nav2': False,
+            'use_sim_time': True
         }]
     )
 
@@ -258,13 +260,14 @@ def generate_launch_description():
         turtlebot_driver,
         waiting_nodes,
 
-        #exploring_node,
         navigating_node,
 
         map_server,
         amcl_node,
         lifecycle_manager,
         initial_pose_publisher,
+        
+        metric_logger,
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(

@@ -13,6 +13,7 @@ from tf2_ros import Buffer, TransformListener
 import numpy as np
 from rclpy.time import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from std_msgs.msg import Bool
 import os
 GridIndex = Tuple[int, int]
 
@@ -58,6 +59,8 @@ class GraphNavigator(Node):
         self.inflation_radius_cells: int = 0
         self.current_goal: Optional[PoseStamped] = None
         self.current_scan=LaserScan()
+        self.goal_finished = False
+
 
         # ---------------- Path state ----------------
         self.path: List[Tuple[float, float]] = []
@@ -86,6 +89,7 @@ class GraphNavigator(Node):
             self.cmd_pub = self.create_publisher(TwistStamped, "/cmd_vel", 10)
         else:
             self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.result_pub = self.create_publisher(Bool, '/navigation_result', qos_map)
         self.timer = self.create_timer(0.05, self.control_loop)
         self.scan_timer=self.create_timer(0.7,self.scan_callback)
 
@@ -334,6 +338,7 @@ class GraphNavigator(Node):
     def goal_callback(self, msg: PoseStamped):
         self.get_logger().info("New goal received or replanning initiated.")
         self.current_goal = msg
+        self.goal_finished = False  # reset flag for this trial
         if not self.map_received:
             return
 
@@ -362,9 +367,22 @@ class GraphNavigator(Node):
         # check to see if goal is reachable
         if not self.is_free(goal_idx[0], goal_idx[1]):
             self.get_logger().info("Goal is in an obstacle or unreachable.")
+            # Publish failure
+            msg_out = Bool()
+            msg_out.data = False
+            self.result_pub.publish(msg_out)
+            self.goal_finished = True
             return
             
         cell_path = self.a_star(start, goal_idx)
+        if not cell_path:
+            self.get_logger().info("No path found to goal.")
+            msg_out = Bool()
+            msg_out.data = False
+            self.result_pub.publish(msg_out)
+            self.goal_finished = True
+            return
+
         self.get_logger().info("Path planned")
         self.path = [self.grid_to_world(ix, iy) for ix, iy in cell_path]
         self.current_waypoint_index = 0
@@ -431,6 +449,7 @@ class GraphNavigator(Node):
         )
         # If finished
         if self.current_waypoint_index >= len(self.path):
+            self.goal_finished = True
             self.path = []
             if self.use_twist_stamped:
                 self.cmd_pub.publish(TwistStamped())  # stop
@@ -438,6 +457,12 @@ class GraphNavigator(Node):
                 self.cmd_pub.publish(Twist())  # stop
             
             self.get_logger().info("Reached goal.")
+            
+            # Publish success to logger
+            msg = Bool()
+            msg.data = True
+            self.result_pub.publish(msg)
+            
             return
 
 

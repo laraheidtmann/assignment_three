@@ -2,24 +2,28 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import NavigateToPose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Bool
+from nav_msgs.msg import Path
 from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import PoseStamped
 import csv
 import os
 import math
 import time
 
-class MetricLogger(Node):
 
+class MetricLogger(Node):
     def __init__(self):
         super().__init__('metric_logger')
 
         # ---------------- PARAMETERS ----------------
         self.declare_parameter('scenario_id', 'default')
+        self.declare_parameter('use_nav2', True)  # True for Nav2, False for custom nav
         self.scenario_id = self.get_parameter('scenario_id').value
+        self.use_nav2 = self.get_parameter('use_nav2').value
 
         # ---------------- STATE ----------------
         self.trial_active = False
@@ -53,10 +57,15 @@ class MetricLogger(Node):
         self.create_subscription(PoseStamped, '/goal_pose', self.goal_cb, 10)
         self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
         self.create_subscription(LaserScan, '/scan', self.scan_cb, 10)
-        self.create_subscription(PoseStamped, '/plan', self.plan_cb, 10)
+        self.create_subscription(Path, '/plan', self.plan_cb, 10)
 
-        # ---------------- ACTION CLIENT ----------------
-        self.nav_client = ActionClient(self, NavigateToPose, '/navigate_to_pose')
+        if not self.use_nav2:
+            # custom navigation publishes Bool on /navigation_result
+            self.create_subscription(Bool, '/navigation_result', self.nav_result_cb, 10)
+
+        # ---------------- ACTION CLIENT (Nav2 only) ----------------
+        if self.use_nav2:
+            self.nav_client = ActionClient(self, NavigateToPose, '/navigate_to_pose')
 
         self.get_logger().info('Metric logger initialized')
 
@@ -64,16 +73,22 @@ class MetricLogger(Node):
     # GOAL HANDLING
     # ==================================================
 
-    def goal_cb(self, msg: PoseStamped):
+    def goal_cb(self, msg: 'PoseStamped'):
         if self.trial_active:
             self.get_logger().warn('Previous trial unfinished — marking failed')
             self.end_trial(success=False)
 
         self.goal_pose = msg
         self.start_trial()
-        self.send_nav_goal(msg)
 
-    def send_nav_goal(self, pose: PoseStamped):
+        if self.use_nav2:
+            self.send_nav_goal(msg)
+        else:
+            # For custom navigation, trial starts and result will be published via /navigation_result
+            self.get_logger().info(f"Trial started for custom navigation: goal ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f})")
+
+    # ---------------- NAV2 ACTION ----------------
+    def send_nav_goal(self, pose: 'PoseStamped'):
         if not self.nav_client.wait_for_server(timeout_sec=5.0):
             self.get_logger().error('NavigateToPose action server not available')
             self.end_trial(success=False)
@@ -83,8 +98,7 @@ class MetricLogger(Node):
         goal_msg.pose = pose
 
         self.get_logger().info(
-            f"Sending goal to Nav2: ({pose.pose.position.x:.2f}, "
-            f"{pose.pose.position.y:.2f})"
+            f"Sending goal to Nav2: ({pose.pose.position.x:.2f}, {pose.pose.position.y:.2f})"
         )
 
         send_future = self.nav_client.send_goal_async(goal_msg)
@@ -116,6 +130,12 @@ class MetricLogger(Node):
             self.get_logger().warn(f'Nav2 reports goal FAILED (status={status})')
             self.end_trial(success=False)
 
+    # ---------------- CUSTOM NAVIGATION ----------------
+    def nav_result_cb(self, msg: Bool):
+        """Handles success/failure from custom navigation node."""
+        if self.trial_active:
+            self.end_trial(success=msg.data)
+
     # ==================================================
     # METRICS
     # ==================================================
@@ -127,11 +147,6 @@ class MetricLogger(Node):
         self.last_position = None
         self.replans = 0
         self.min_clearance = float('inf')
-
-        self.get_logger().info(
-            f"Trial started: goal ({self.goal_pose.pose.position.x:.2f}, "
-            f"{self.goal_pose.pose.position.y:.2f})"
-        )
 
     def odom_cb(self, msg: Odometry):
         if not self.trial_active:
@@ -152,7 +167,7 @@ class MetricLogger(Node):
         if valid:
             self.min_clearance = min(self.min_clearance, min(valid))
 
-    def plan_cb(self, msg):
+    def plan_cb(self, msg: Path):
         if self.trial_active:
             self.replans += 1
 
