@@ -161,15 +161,6 @@ def generate_launch_description():
         remappings=mappings,
         respawn=True
     )
-    
-    # Dynamic obstacles supervisor controller
-    obstacles_supervisor = WebotsController(
-        robot_name='ObstaclesSupervisor',
-        parameters=[
-            {'use_sim_time': use_sim_time}
-        ],
-        respawn=True
-    )
 
     # Navigation
     navigation_nodes = []
@@ -266,7 +257,6 @@ def generate_launch_description():
         footprint_publisher,
 
         turtlebot_driver,
-        obstacles_supervisor,
         waiting_nodes,
 
         #exploring_node,

@@ -51,14 +51,8 @@ TurtleBot3Burger {
     }
   ]
 }
-<<<<<<< HEAD
-
-DEF DYNAMIC_OBS_2 Solid {
-  translation 1.0 0.0 0.10
-=======
 DEF DYNAMIC_OBS_1 Solid {
   translation 0.679716 -0.00279969 0.1
->>>>>>> fd1c7b96e1c751574299df529f33759e250dfc44
   children [
     Shape {
       appearance PBRAppearance {
@@ -79,14 +73,8 @@ DEF DYNAMIC_OBS_1 Solid {
     mass 1
   }
 }
-<<<<<<< HEAD
-
-DEF DYNAMIC_OBS_4 Solid {
-  translation -1.0 0.5 0.10
-=======
 DEF DYNAMIC_OBS_2 Solid {
   translation 0.0407063 1.22666 0.1
->>>>>>> fd1c7b96e1c751574299df529f33759e250dfc44
   children [
     Shape {
       appearance PBRAppearance {
