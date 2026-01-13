@@ -68,7 +68,7 @@ setup(
             'odom_calculator = assignment_three_pkg.odom_calculator:main',
             'occupancy_grid = assignment_three_pkg.occupancy_grid_node:main',
             'exploring_node = assignment_three_pkg.exploring_node_improved:main',
-            'navigating_node = assignment_three_pkg.graph_navigator_old:main',
+            'navigating_node = assignment_three_pkg.graph_navigator_simple:main',
             'set_initial_pose = assignment_three_pkg.set_initial_pose:main',
             'metric_logger = assignment_three_pkg.metric_logger:main',
         ],
