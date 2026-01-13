@@ -88,7 +88,7 @@ class GraphNavigator(Node):
         self.get_logger().info("GraphNavigator with dynamic obstacle tracking started")
         # ---------------- Replan hysteresis ----------------
         self.block_counter = 0
-        self.block_counter_threshold = 3   # number of consecutive detections required
+        self.block_counter_threshold = 2   # number of consecutive detections required
         # -------- Dynamic obstacle tracking --------
         self.tracked_obstacles = {}  
         # id -> {
@@ -131,10 +131,11 @@ class GraphNavigator(Node):
                 y_pred = y + vy * t
 
                 # Inflate using a circle around the predicted centroid
-                num_points = max(8, int(2 * math.pi * self.safety_distance / self.map_resolution))
+                inflation= self.safety_distance+ 0.1
+                num_points = max(8, int(2 * math.pi * inflation / self.map_resolution))
                 for theta in np.linspace(0, 2 * math.pi, num_points, endpoint=False):
-                    xr = x_pred + self.safety_distance * math.cos(theta)
-                    yr = y_pred + self.safety_distance * math.sin(theta)
+                    xr = x_pred + inflation * math.cos(theta)
+                    yr = y_pred + inflation * math.sin(theta)
                     grid = self.world_to_grid(xr, yr)
                     if grid is not None:
                         predicted_cells.add(grid)
@@ -258,7 +259,7 @@ class GraphNavigator(Node):
         dynamic_cells = []
         points_map = []
 
-        max_dyn_range = 1.0  # maximum distance to consider dynamic obstacles (meters)
+        max_dyn_range = 2.0  # maximum distance to consider dynamic obstacles (meters)
 
         for i, r in enumerate(self.current_scan.ranges):
             if math.isinf(r) or math.isnan(r):
@@ -330,7 +331,7 @@ class GraphNavigator(Node):
             self.path = []  # invalidate current path
             if self.current_goal:
                 self.goal_callback(self.current_goal)
-
+    
 
     def dynamic_obstacle_blocks_path(self) -> bool:
        #Returns True if any dynamic obstacle lies on the remaining path.

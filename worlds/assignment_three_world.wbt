@@ -52,28 +52,7 @@ TurtleBot3Burger {
     }
   ]
 }
-DEF DYNAMIC_OBS_1 Solid {
-  translation -0.5 -0.5 0.10
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 0 0
-        metalness 0
-      }
-      geometry Box {
-        size 0.2 0.2 0.2
-      }
-    }
-  ]
-  name "dynamic_obstacle_1"
-  boundingObject Box {
-    size 0.2 0.2 0.2
-  }
-  physics Physics {
-    density -1
-    mass 1
-  }
-}
+
 DEF DYNAMIC_OBS_2 Solid {
   translation 1.0 0.0 0.10
   children [
@@ -96,28 +75,7 @@ DEF DYNAMIC_OBS_2 Solid {
     mass 1
   }
 }
-DEF DYNAMIC_OBS_3 Solid {
-  translation 0.0 1.5 0.10
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 0 0
-        metalness 0
-      }
-      geometry Box {
-        size 0.2 0.2 0.2
-      }
-    }
-  ]
-  name "dynamic_obstacle_3"
-  boundingObject Box {
-    size 0.2 0.2 0.2
-  }
-  physics Physics {
-    density -1
-    mass 1
-  }
-}
+
 DEF DYNAMIC_OBS_4 Solid {
   translation -1.0 0.5 0.10
   children [
