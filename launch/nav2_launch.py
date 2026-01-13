@@ -128,7 +128,7 @@ def generate_launch_description():
         name='metric_logger',
         output='screen',
         parameters=[{
-            'scenario_id': 'assignment_three_default'
+            'scenario_id': 'nav2_nav',
         }]
     )
 
