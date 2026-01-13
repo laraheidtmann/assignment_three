@@ -65,6 +65,10 @@ class GraphNavigator(Node):
 
         # ---------------- TF ----------------
         self.tf_buffer = Buffer()
+        self.get_logger().info("Waiting for TF map → base_footprint...")
+        self.tf_buffer.wait_for_transform_async(
+            'map', self.base_frame_id, Time())
+        
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         qos_map = QoSProfile(
@@ -101,10 +105,12 @@ class GraphNavigator(Node):
         if not self.map_received or not hasattr(self, 'current_scan'):
             return
 
-        if not self.tf_buffer.can_transform('map', self.current_scan.header.frame_id,
-                                            self.current_scan.header.stamp,
-                                            timeout=Duration(seconds=1.0)):
-            self.get_logger().warn(f"Transform from {self.current_scan.header.frame_id} to map not available yet")
+        if not self.tf_buffer.can_transform('map',self.current_scan.header.frame_id,
+                                            Time(),
+                                            timeout=Duration(seconds=0.2)):
+            self.get_logger().warn(
+                f"Transform from {self.current_scan.header.frame_id} to map not available yet",
+                throttle_duration_sec=5.0)
             return
 
         dynamic_cells = []
@@ -124,13 +130,13 @@ class GraphNavigator(Node):
 
             point_lidar = PointStamped()
             point_lidar.header.frame_id = self.current_scan.header.frame_id
-            point_lidar.header.stamp = self.current_scan.header.stamp
+            point_lidar.header.stamp = rclpy.time.Time().to_msg()
             point_lidar.point.x = x_l
             point_lidar.point.y = y_l
             point_lidar.point.z = 0.0
 
             try:
-                point_map = self.tf_buffer.transform(point_lidar, 'map', timeout=Duration(seconds=0.1))
+                point_map = self.tf_buffer.transform(point_lidar, 'map')
             except Exception as e:
                 self.get_logger().error(f"TF transform failed: {e}")
                 continue
