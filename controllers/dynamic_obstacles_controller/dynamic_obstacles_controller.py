@@ -16,20 +16,14 @@ class DynamicObstaclesController:
         # Get references to dynamic obstacles
         self.obstacle1 = self.supervisor.getFromDef("DYNAMIC_OBS_1")
         self.obstacle2 = self.supervisor.getFromDef("DYNAMIC_OBS_2")
-        self.obstacle3 = self.supervisor.getFromDef("DYNAMIC_OBS_3")
-        self.obstacle4 = self.supervisor.getFromDef("DYNAMIC_OBS_4")
-        self.obstacle5 = self.supervisor.getFromDef("DYNAMIC_OBS_5")
         
         # Movement parameters - simple back and forth
         self.speed = 0.0625  # m/s (meio termo entre 0.075 e 0.05) 
         
         # Each obstacle: direction vector, start position, max range, moving forward flag
         self.obstacles_data = [
-            {'obstacle': self.obstacle1, 'dir': [0, 1], 'start': [-0.5, -0.5], 'range': 0.75, 'forward': True},   # Y axis
-            {'obstacle': self.obstacle2, 'dir': [1, 0], 'start': [1.0, 0.0], 'range': 0.6, 'forward': True},    # X axis
-            {'obstacle': self.obstacle3, 'dir': [1, 0], 'start': [0.0, 1.5], 'range': 0.675, 'forward': True},   # X axis
-            {'obstacle': self.obstacle4, 'dir': [0, 1], 'start': [-1.0, 0.5], 'range': 0.75, 'forward': True},   # Y axis
-            {'obstacle': self.obstacle5, 'dir': [1, 0], 'start': [1.6, -1.5], 'range': 0.7, 'forward': True}    # X axis
+            {'obstacle': self.obstacle1, 'dir': [1, 0], 'start': [0.7, 0], 'range': 3.1, 'forward': True},
+            {'obstacle': self.obstacle2, 'dir': [1, 0], 'start': [0, 1.2], 'range': 1.25, 'forward': True},
         ]
         
         print("Dynamic Obstacles Controller initialized")
@@ -42,18 +36,6 @@ class DynamicObstaclesController:
             print("  - DYNAMIC_OBS_2 found")
         else:
             print("  - DYNAMIC_OBS_2 NOT FOUND")
-        if self.obstacle3:
-            print("  - DYNAMIC_OBS_3 found")
-        else:
-            print("  - DYNAMIC_OBS_3 NOT FOUND")
-        if self.obstacle4:
-            print("  - DYNAMIC_OBS_4 found")
-        else:
-            print("  - DYNAMIC_OBS_4 NOT FOUND")
-        if self.obstacle5:
-            print("  - DYNAMIC_OBS_5 found")
-        else:
-            print("  - DYNAMIC_OBS_5 NOT FOUND")
         sys.stdout.flush()
     
     def move_obstacle_oscillate(self, obs_data):
