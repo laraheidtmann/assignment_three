@@ -1,0 +1,177 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/robots/robotis/turtlebot/protos/TurtleBot3Burger.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/devices/robotis/protos/RobotisLds01.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projects/appearances/protos/Parquetry.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.4709781828237027 -0.0009893393223353027 0.8821443036781388 3.1453047273115575
+  position 5.282256951361424 -0.5764348474548668 7.072794617940131
+  follow "TurtleBot3Burger:LDS-01"
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  translation 0.583293 0.0121475 -2.93099e-14
+  floorSize 4 5
+  floorAppearance Parquetry {
+    type "light strip"
+  }
+  wallThickness 0.02
+  wallHeight 0.3
+}
+TurtleBot3Burger {
+  translation 0.852031 -2.09241 -0.000247739
+  controller "<extern>"
+  controllerArgs [
+    ""
+  ]
+  extensionSlot [
+    Solid {
+      name "imu_link"
+    }
+    GPS {
+    }
+    InertialUnit {
+      name "inertial_unit"
+    }
+    RobotisLds01 {
+    }
+  ]
+}
+Solid {
+  translation 1.85263 1.06167 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.666667 0 1
+      }
+      geometry Box {
+        size 0.2 0.5 0.5
+      }
+    }
+  ]
+}
+Solid {
+  translation 0.294528 -0.77852 0.1
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Box {
+        size 0.4 0.4 0.3
+      }
+    }
+  ]
+  name "solid(1)"
+}
+Solid {
+  translation 1.97207 -1.4853 0.1
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Box {
+        size 0.4 0.4 0.3
+      }
+    }
+  ]
+  name "solid(6)"
+}
+Solid {
+  translation 1.05088 1.47796 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.333333 0
+      }
+      geometry Cone {
+        bottomRadius 0.17
+        height 0.8
+      }
+    }
+  ]
+  name "solid(2)"
+}
+Solid {
+  translation -0.449558 1.77076 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.333333 0
+      }
+      geometry Cone {
+        bottomRadius 0.21
+        height 0.8
+      }
+    }
+  ]
+  name "solid(7)"
+}
+Solid {
+  translation 0.386326 0.622404 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Cylinder {
+        height 0.8
+        radius 0.13
+      }
+    }
+  ]
+  name "solid(3)"
+}
+Solid {
+  translation -0.731616 0.701197 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Cylinder {
+        height 0.8
+        radius 0.08
+      }
+    }
+  ]
+  name "solid(4)"
+}
+Solid {
+  translation -0.368187 -1.60964 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Cylinder {
+        height 0.8
+        radius 0.08
+      }
+    }
+  ]
+  name "solid(5)"
+}
+Solid {
+  translation 1.65175 -0.615934 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+      }
+      geometry Cylinder {
+        height 0.8
+        radius 0.08
+      }
+    }
+  ]
+  name "solid(8)"
+}
+PointLight {
+  attenuation 0 0 1
+  location 0 0.3 0
+}

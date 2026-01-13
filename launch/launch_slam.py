@@ -1,3 +1,21 @@
+#!/usr/bin/env python
+
+# Copyright 1996-2023 Cyberbotics Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Launch Webots TurtleBot3 Burger driver."""
+
 import os
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
@@ -22,27 +40,11 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
     robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
 
+
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
         mode=mode,
         ros2_supervisor=True
-    )
-
-    obstacles_controller_script = os.path.join(
-        package_dir, 'controllers', 'dynamic_obstacles_controller', 'dynamic_obstacles_controller.py'
-    )
-    obstacles_supervisor_controller = ExecuteProcess(
-        output='screen',
-        cmd=['python3', obstacles_controller_script],
-        additional_env={
-            'WEBOTS_CONTROLLER_URL': controller_url_prefix('1234') + 'ObstaclesSupervisor',
-            'WEBOTS_HOME': get_package_prefix('webots_ros2_driver'),
-        },
-        respawn=True,
-    )
-    obstacles_supervisor_controller_delayed = TimerAction(
-        period=2.0,
-        actions=[obstacles_supervisor_controller],
     )
 
     robot_state_publisher = Node(
@@ -97,46 +99,27 @@ def generate_launch_description():
         remappings=mappings,
         respawn=True
     )
-
-    # Navigation
-    navigation_nodes = []
-    os.environ['TURTLEBOT3_MODEL'] = 'burger'
-    nav2_map = os.path.join(package_dir, 'slam_maps', 'my_map_game.yaml')
-    nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
-    if 'turtlebot3_navigation2' in get_packages_with_prefixes():
-        turtlebot_navigation = IncludeLaunchDescription(
+    
+    # SLAM
+    slam_nodes = []
+    if 'turtlebot3_cartographer' in get_packages_with_prefixes():
+        turtlebot_slam = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(
-                get_package_share_directory('turtlebot3_navigation2'), 'launch', 'navigation2.launch.py')),
+                get_package_share_directory('turtlebot3_cartographer'), 'launch', 'cartographer.launch.py')),
             launch_arguments=[
-                ('map', nav2_map),
-                ('params_file', nav2_params),
                 ('use_sim_time', use_sim_time),
             ])
-        navigation_nodes.append(turtlebot_navigation)
+        slam_nodes.append(turtlebot_slam)
 
-
-    # Wait for the simulation to be ready to start navigation nodes
     waiting_nodes = WaitForControllerConnection(
         target_driver=turtlebot_driver,
-        nodes_to_start=navigation_nodes + ros_control_spawners
-    )
-    
-    
-    metric_logger = Node(
-        package='assignment_three_pkg',
-        executable='metric_logger',
-        name='metric_logger',
-        output='screen',
-        parameters=[{
-            'scenario_id': 'nav2_nav',
-        }]
+        nodes_to_start=slam_nodes + ros_control_spawners
     )
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
-            default_value='assignment_three_world.wbt',
-            description='Choose one of the world files from `/webots_ros2_turtlebot/world` directory'
+            default_value='game_world_static.wbt'
         ),
         DeclareLaunchArgument(
             'mode',
@@ -146,16 +129,11 @@ def generate_launch_description():
         webots,
         webots._supervisor,
 
-        obstacles_supervisor_controller_delayed,
-
         robot_state_publisher,
         footprint_publisher,
 
         turtlebot_driver,
         waiting_nodes,
-
-        metric_logger,
-
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(

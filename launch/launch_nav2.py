@@ -1,21 +1,3 @@
-#!/usr/bin/env python
-
-# Copyright 1996-2023 Cyberbotics Ltd.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""Launch Webots TurtleBot3 Burger driver."""
-
 import os
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
@@ -37,11 +19,8 @@ def generate_launch_description():
     package_dir = get_package_share_directory('assignment_three_pkg')
     world = LaunchConfiguration('world')
     mode = LaunchConfiguration('mode')
-    use_nav = LaunchConfiguration('nav', default=False)
-    use_slam = LaunchConfiguration('slam', default=True)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
     robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
-
 
     webots = WebotsLauncher(
         world=PathJoinSubstitution([package_dir, 'worlds', world]),
@@ -122,7 +101,7 @@ def generate_launch_description():
     # Navigation
     navigation_nodes = []
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
-    nav2_map = os.path.join(package_dir, 'resource', 'my_map.yaml')
+    nav2_map = os.path.join(package_dir, 'slam_maps', 'game_map.yaml')
     nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
     if 'turtlebot3_navigation2' in get_packages_with_prefixes():
         turtlebot_navigation = IncludeLaunchDescription(
@@ -132,32 +111,31 @@ def generate_launch_description():
                 ('map', nav2_map),
                 ('params_file', nav2_params),
                 ('use_sim_time', use_sim_time),
-            ],
-            condition=launch.conditions.IfCondition(use_nav))
+            ])
         navigation_nodes.append(turtlebot_navigation)
 
-    # SLAM
-    if 'turtlebot3_cartographer' in get_packages_with_prefixes():
-        turtlebot_slam = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                get_package_share_directory('turtlebot3_cartographer'), 'launch', 'cartographer.launch.py')),
-            launch_arguments=[
-                ('use_sim_time', use_sim_time),
-            ],
-            condition=launch.conditions.IfCondition(use_slam))
-        navigation_nodes.append(turtlebot_slam)
 
     # Wait for the simulation to be ready to start navigation nodes
     waiting_nodes = WaitForControllerConnection(
         target_driver=turtlebot_driver,
         nodes_to_start=navigation_nodes + ros_control_spawners
     )
+    
+    
+    metric_logger = Node(
+        package='assignment_three_pkg',
+        executable='metric_logger',
+        name='metric_logger',
+        output='screen',
+        parameters=[{
+            'scenario_id': 'nav2_nav',
+        }]
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
-            default_value='assignment_three_world.wbt',
-            description='Choose one of the world files from `/webots_ros2_turtlebot/world` directory'
+            default_value='game_world.wbt',
         ),
         DeclareLaunchArgument(
             'mode',
@@ -174,6 +152,9 @@ def generate_launch_description():
 
         turtlebot_driver,
         waiting_nodes,
+
+        metric_logger,
+
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(

@@ -6,4 +6,4 @@ log/
 recordings/
 output_videos/
 output_data/
-
+*.wbproj
