@@ -9,7 +9,7 @@
 - Guilherme Cruz (up202403107@up.pt)
 - Leonhard Haselbek (up202501695@up.pt)
 
-<img src="feup_logo.tif" alt="FEUP Logo" width="130"/>
+<img src="./feup_logo.png" alt="FEUP Logo" width="130"/>
 
 
 This repository contains a ROS 2–based autonomous mobile robot navigation framework developed and evaluated in **Webots** using a **TurtleBot3 Burger** equipped with a **2D LiDAR** sensor. The system supports **SLAM-based mapping**, **graph-based A*** navigation, **dynamic obstacle handling**, and **quantitative performance evaluation**.
@@ -41,11 +41,6 @@ The project was developed and tested using the following software environment.
 - Webots R2025a
 - `webots_ros2_driver`
 - `webots_ros2_control`
-
-**Navigation**
-- Nav2 (Navigation2 stack)
-  Used for baseline navigation and comparison
-- Custom graph-based navigation implemented within this package
 
 **Python Dependencies**
 - Python 3 (default with ROS 2 Humble)
