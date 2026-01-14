@@ -13,6 +13,9 @@ from tf2_ros import Buffer, TransformListener
 import numpy as np
 from rclpy.time import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from std_msgs.msg import Bool
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped
 import os
 GridIndex = Tuple[int, int]
 
@@ -31,7 +34,7 @@ class GraphNavigator(Node):
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('obstacle_threshold', 50)
-        self.declare_parameter('linear_speed', 0.15)
+        self.declare_parameter('linear_speed', 0.25)
         self.declare_parameter('angular_speed', 0.6)
         self.declare_parameter('waypoint_dist', 0.10)
         self.declare_parameter('safety_distance', 0.25)  # meters
@@ -65,6 +68,9 @@ class GraphNavigator(Node):
 
         # ---------------- TF ----------------
         self.tf_buffer = Buffer()
+        self.get_logger().info("Waiting for TF map → base_footprint...")
+        self.tf_buffer.wait_for_transform_async(
+            'map', self.base_frame_id, Time())
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         qos_map = QoSProfile(
@@ -82,6 +88,8 @@ class GraphNavigator(Node):
             self.cmd_pub = self.create_publisher(TwistStamped, "/cmd_vel", 10)
         else:
             self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.path_pub = self.create_publisher(Path, '/plan', 10)
+        self.result_pub = self.create_publisher(Bool, '/navigation_result', qos_map)
         self.timer = self.create_timer(0.05, self.control_loop)
         self.scan_timer=self.create_timer(1,self.scan_callback)
 
@@ -103,6 +111,26 @@ class GraphNavigator(Node):
 
     def lidar_callback(self, scan: LaserScan):
         self.current_scan=scan
+        
+    def publish_path(self):
+        if not self.path:
+            self.get_logger().info("No path to publish.")
+            return
+
+        path_msg = Path()
+        path_msg.header.frame_id = 'map'
+        path_msg.header.stamp = self.get_clock().now().to_msg()
+
+        for wx, wy in self.path:
+            pose = PoseStamped()
+            pose.header.frame_id = 'map'
+            pose.header.stamp = path_msg.header.stamp
+            pose.pose.position.x = wx
+            pose.pose.position.y = wy
+            pose.pose.orientation.w = 1.0
+            path_msg.poses.append(pose)
+
+        self.path_pub.publish(path_msg)
     
     def predict_dynamic_obstacles(self, horizon=1.5, dt=0.2):
         """
@@ -251,9 +279,11 @@ class GraphNavigator(Node):
             return
 
         if not self.tf_buffer.can_transform('map', self.current_scan.header.frame_id,
-                                            self.current_scan.header.stamp,
-                                            timeout=Duration(seconds=1.0)):
-            self.get_logger().warn(f"Transform from {self.current_scan.header.frame_id} to map not available yet")
+                                            Time(),
+                                            timeout=Duration(seconds=0.2)):
+            self.get_logger().warn(
+                f"Transform from {self.current_scan.header.frame_id} to map not available yet",
+                throttle_duration_sec=5.0)
             return
 
         dynamic_cells = []
@@ -275,13 +305,13 @@ class GraphNavigator(Node):
 
             point_lidar = PointStamped()
             point_lidar.header.frame_id = self.current_scan.header.frame_id
-            point_lidar.header.stamp = self.current_scan.header.stamp
+            point_lidar.header.stamp = rclpy.time.Time().to_msg()
             point_lidar.point.x = x_l
             point_lidar.point.y = y_l
             point_lidar.point.z = 0.0
 
             try:
-                point_map = self.tf_buffer.transform(point_lidar, 'map', timeout=Duration(seconds=0.1))
+                point_map = self.tf_buffer.transform(point_lidar, 'map')
             except Exception as e:
                 self.get_logger().error(f"TF transform failed: {e}")
                 continue
@@ -523,12 +553,26 @@ class GraphNavigator(Node):
         # check to see if goal is reachable
         if not self.is_free(goal_idx[0], goal_idx[1]):
             self.get_logger().info("Goal is in an obstacle or unreachable.")
+            # Publish failure
+            msg_out = Bool()
+            msg_out.data = False
+            self.result_pub.publish(msg_out)
+            self.goal_finished = True
             return
             
         cell_path = self.a_star(start, goal_idx)
+        if not cell_path:
+            self.get_logger().info("No path found to goal.")
+            msg_out = Bool()
+            msg_out.data = False
+            self.result_pub.publish(msg_out)
+            self.goal_finished = True
+            return
+        
         self.path = [self.grid_to_world(ix, iy) for ix, iy in cell_path]
         self.get_logger().info("Path planned")
         self.current_waypoint_index = 0
+        self.publish_path()
 
     # ---------------- A* ----------------
     def a_star(self, start: GridIndex, goal: GridIndex) -> List[GridIndex]:
@@ -600,6 +644,12 @@ class GraphNavigator(Node):
                 self.cmd_pub.publish(Twist())  # stop
             
             self.get_logger().info("Reached goal.")
+            
+            # Publish success to logger
+            msg = Bool()
+            msg.data = True
+            self.result_pub.publish(msg)
+            
             return
 
         wx, wy = self.path[self.current_waypoint_index]

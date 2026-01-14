@@ -7,3 +7,5 @@ recordings/
 output_videos/
 output_data/
 *.wbproj
+*.pyc
+__pycache__/
