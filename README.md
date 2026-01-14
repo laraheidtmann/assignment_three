@@ -1,4 +1,17 @@
-# Graph-Based Navigation and Dynamic Obstacle Avoidance in ROS 
+# Graph-Based Navigation and Dynamic Obstacle Avoidance in ROS
+
+**Course:** Intelligent Robotics
+
+**Institution:** Faculty of Engineering, University of Porto (FEUP)
+
+**Authors**:
+- Lara Heidtmann (up202502856@up.pt)
+- Guilherme Cruz (up202403107@up.pt)
+- Leonhard Haselbek (up202501695@up.pt)
+
+<img src="feup_logo.tif" alt="FEUP Logo" width="130"/>
+
+
 This repository contains a ROS 2–based autonomous mobile robot navigation framework developed and evaluated in **Webots** using a **TurtleBot3 Burger** equipped with a **2D LiDAR** sensor. The system supports **SLAM-based mapping**, **graph-based A*** navigation, **dynamic obstacle handling**, and **quantitative performance evaluation**.
 
 The project implements and compares two navigation approaches:
@@ -11,6 +24,37 @@ Both approaches are evaluated on:
 
 This enables a controlled and fair comparison of navigation performance under different environmental assumptions.
 
+
+## System Requirements
+The project was developed and tested using the following software environment.
+
+**Operating System**
+- Ubuntu 22.04 (Jammy Jellyfish)
+  Tested under WSL2 on Windows
+
+**ROS 2**
+- ROS 2 Humble Hawksbill
+- Build system: `colcon`
+- Package type: `ament_python`
+
+**Simulator**
+- Webots R2025a
+- `webots_ros2_driver`
+- `webots_ros2_control`
+
+**Navigation**
+- Nav2 (Navigation2 stack)
+  Used for baseline navigation and comparison
+- Custom graph-based navigation implemented within this package
+
+**Python Dependencies**
+- Python 3 (default with ROS 2 Humble)
+- `numpy`
+
+**Notes**
+- The project was tested using Webots simulation only
+- Real-robot deployment was not part of the scope
+- Dynamic obstacles are controlled via a custom Webots supervisor controller
 
 
 ## Project Overview
