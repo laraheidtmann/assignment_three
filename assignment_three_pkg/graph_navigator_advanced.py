@@ -79,7 +79,6 @@ class GraphNavigator(Node):
             depth=1
         )
 
-
         # Subscribers / Publishers / Timer
         self.lidar_sub=self.create_subscription(LaserScan,'/scan',self.lidar_callback,10)
         self.map_sub = self.create_subscription(OccupancyGrid, self.map_topic, self.map_callback, qos_map)
@@ -106,7 +105,6 @@ class GraphNavigator(Node):
         # }
         self.next_obstacle_id = 0
         self.max_tracking_distance = 0.5  # meters
-
 
 
     def lidar_callback(self, scan: LaserScan):
@@ -172,7 +170,6 @@ class GraphNavigator(Node):
         for ix, iy in predicted_cells:
             self.dynamic_map[iy, ix] = 100  # mark as occupied
 
-
     def update_tracked_obstacles(self, centroids, stamp):
         """
         Update self.tracked_obstacles with new centroids, estimate velocity.
@@ -234,7 +231,6 @@ class GraphNavigator(Node):
 
         self.tracked_obstacles = new_tracked
 
-
     def compute_centroid(self, cluster):
         xs = [p[0] for p in cluster]
         ys = [p[1] for p in cluster]
@@ -273,6 +269,7 @@ class GraphNavigator(Node):
 
         return clusters
 
+
     # ---------------- Scan handling ----------------
     def scan_callback(self):
         if not self.map_received or not hasattr(self, 'current_scan'):
@@ -288,7 +285,6 @@ class GraphNavigator(Node):
 
         dynamic_cells = []
         points_map = []
-
         max_dyn_range = 2.0  # maximum distance to consider dynamic obstacles (meters)
 
         for i, r in enumerate(self.current_scan.ranges):
@@ -362,7 +358,6 @@ class GraphNavigator(Node):
             if self.current_goal:
                 self.goal_callback(self.current_goal)
     
-
     def dynamic_obstacle_blocks_path(self) -> bool:
        #Returns True if any dynamic obstacle lies on the remaining path.
 
@@ -382,7 +377,6 @@ class GraphNavigator(Node):
 
         return False
 
-
     def update_dynamic_map(self, cells: List[GridIndex]):
         """Update the dynamic map with current laser scan points."""
         if not hasattr(self, 'dynamic_map'):
@@ -397,7 +391,6 @@ class GraphNavigator(Node):
         # Inflate dynamic obstacles with smaller radius than static map
         dyn_inflation_cells = max(4, int(self.safety_distance / self.map_resolution))
         self.inflate_dynamic_obstacles(dyn_inflation_cells)
-
 
     def inflate_dynamic_obstacles(self, inflation_radius_cells: int):
         """Inflate dynamic obstacles by a small radius."""
@@ -419,7 +412,6 @@ class GraphNavigator(Node):
         self.dynamic_map = inflated
 
 
-
     # ---------------- Map handling ----------------
     def map_callback(self, msg: OccupancyGrid):
         self.map_msg = msg
@@ -434,7 +426,6 @@ class GraphNavigator(Node):
             (self.map_height, self.map_width),
             dtype=np.uint8
         )
-
 
         self.map_data = np.array(msg.data, dtype=np.int8).reshape(
             (self.map_height, self.map_width)
@@ -471,6 +462,7 @@ class GraphNavigator(Node):
 
         self.inflated_map = inflated
 
+
     # ---------------- Coordinate helpers ----------------
     def world_to_grid(self, x: float, y: float) -> Optional[GridIndex]:
         ox, oy = self.map_origin
@@ -498,14 +490,13 @@ class GraphNavigator(Node):
 
         return static_free and dynamic_free
 
- 
-
     def diagonal_allowed(self, cx, cy, nx, ny) -> bool:
         dx = nx - cx
         dy = ny - cy
         if abs(dx) == 1 and abs(dy) == 1:
             return self.is_free(cx + dx, cy) and self.is_free(cx, cy + dy)
         return True
+
 
     # ---------------- Robot pose ----------------
     def get_robot_grid_index(self) -> Optional[GridIndex]:
@@ -520,6 +511,7 @@ class GraphNavigator(Node):
             )
         except Exception:
             return None
+
 
     # ---------------- Goal handling ----------------
     def goal_callback(self, msg: PoseStamped):
@@ -538,8 +530,6 @@ class GraphNavigator(Node):
                     f"TF transform failed (from {msg.header.frame_id} to map): {e}"
                 )
                 return
-
-
 
         start = self.get_robot_grid_index()
         goal_idx = self.world_to_grid(
@@ -573,6 +563,7 @@ class GraphNavigator(Node):
         self.get_logger().info("Path planned")
         self.current_waypoint_index = 0
         self.publish_path()
+
 
     # ---------------- A* ----------------
     def a_star(self, start: GridIndex, goal: GridIndex) -> List[GridIndex]:
@@ -617,6 +608,7 @@ class GraphNavigator(Node):
 
         return []
 
+
     # ---------------- Control ----------------
     def control_loop(self):
         if not self.path:
@@ -658,7 +650,6 @@ class GraphNavigator(Node):
         target_angle = math.atan2(dy, dx)
         angle_error = self.normalize_angle(target_angle - yaw)
 
-
         if dist < self.waypoint_dist:
             self.current_waypoint_index += 1
             return
@@ -689,7 +680,6 @@ class GraphNavigator(Node):
         if hasattr(self, 'dynamic_map'):
             self.dynamic_map = (self.dynamic_map * 0.9).astype(np.uint8)
             self.dynamic_map[self.dynamic_map < 5] = 0
-
 
 
     # ---------------- Utilities ----------------

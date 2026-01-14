@@ -19,7 +19,6 @@ class MetricLogger(Node):
     def __init__(self):
         super().__init__('metric_logger')
 
-        # ---------------- PARAMETERS ----------------
         self.declare_parameter('scenario_id', 'default')
         self.declare_parameter('use_nav2', True)  # True for Nav2, False for custom nav
         self.scenario_id = self.get_parameter('scenario_id').value
@@ -68,10 +67,6 @@ class MetricLogger(Node):
             self.nav_client = ActionClient(self, NavigateToPose, '/navigate_to_pose')
 
         self.get_logger().info('Metric logger initialized')
-
-    # ==================================================
-    # GOAL HANDLING
-    # ==================================================
 
     def goal_cb(self, msg: 'PoseStamped'):
         if self.trial_active:
@@ -136,10 +131,6 @@ class MetricLogger(Node):
         if self.trial_active:
             self.end_trial(success=msg.data)
 
-    # ==================================================
-    # METRICS
-    # ==================================================
-
     def start_trial(self):
         self.trial_active = True
         self.start_time = time.time()
@@ -170,10 +161,6 @@ class MetricLogger(Node):
     def plan_cb(self, msg: Path):
         if self.trial_active:
             self.replans += 1
-
-    # ==================================================
-    # END TRIAL
-    # ==================================================
 
     def end_trial(self, success: bool):
         if not self.trial_active:

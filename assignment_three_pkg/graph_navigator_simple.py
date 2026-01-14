@@ -63,7 +63,6 @@ class GraphNavigator(Node):
         self.current_scan=LaserScan()
         self.goal_finished = False
 
-
         # ---------------- Path state ----------------
         self.path: List[Tuple[float, float]] = []
         self.current_waypoint_index = 0
@@ -81,7 +80,6 @@ class GraphNavigator(Node):
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
             depth=1
         )
-
 
         # Subscribers / Publishers / Timer
         self.lidar_sub=self.create_subscription(LaserScan,'/scan',self.lidar_callback,10)
@@ -197,7 +195,6 @@ class GraphNavigator(Node):
             if self.current_goal:
                 self.goal_callback(self.current_goal)
 
-
     def dynamic_obstacle_blocks_path(self) -> bool:
        #Returns True if any dynamic obstacle lies on the remaining path.
 
@@ -217,7 +214,6 @@ class GraphNavigator(Node):
 
         return False
 
-
     def update_dynamic_map(self, cells: List[GridIndex]):
         """Update the dynamic map with current laser scan points."""
         if not hasattr(self, 'dynamic_map'):
@@ -232,7 +228,6 @@ class GraphNavigator(Node):
         # Inflate dynamic obstacles with bigger radius than static map
         dyn_inflation_cells = max(6, int(self.safety_distance / self.map_resolution))
         self.inflate_dynamic_obstacles(dyn_inflation_cells)
-
 
     def inflate_dynamic_obstacles(self, inflation_radius_cells: int):
         """Inflate dynamic obstacles by a small radius."""
@@ -254,7 +249,6 @@ class GraphNavigator(Node):
         self.dynamic_map = inflated
 
 
-
     # ---------------- Map handling ----------------
     def map_callback(self, msg: OccupancyGrid):
         self.map_msg = msg
@@ -269,7 +263,6 @@ class GraphNavigator(Node):
             (self.map_height, self.map_width),
             dtype=np.uint8
         )
-
 
         self.map_data = np.array(msg.data, dtype=np.int8).reshape(
             (self.map_height, self.map_width)
@@ -306,6 +299,7 @@ class GraphNavigator(Node):
 
         self.inflated_map = inflated
 
+
     # ---------------- Coordinate helpers ----------------
     def world_to_grid(self, x: float, y: float) -> Optional[GridIndex]:
         ox, oy = self.map_origin
@@ -333,14 +327,13 @@ class GraphNavigator(Node):
 
         return static_free and dynamic_free
 
- 
-
     def diagonal_allowed(self, cx, cy, nx, ny) -> bool:
         dx = nx - cx
         dy = ny - cy
         if abs(dx) == 1 and abs(dy) == 1:
             return self.is_free(cx + dx, cy) and self.is_free(cx, cy + dy)
         return True
+
 
     # ---------------- Robot pose ----------------
     def get_robot_grid_index(self) -> Optional[GridIndex]:
@@ -355,6 +348,7 @@ class GraphNavigator(Node):
             )
         except Exception:
             return None
+
 
     # ---------------- Goal handling ----------------
     def goal_callback(self, msg: PoseStamped):
@@ -374,8 +368,6 @@ class GraphNavigator(Node):
                     f"TF transform failed (from {msg.header.frame_id} to map): {e}"
                 )
                 return
-
-
 
         start = self.get_robot_grid_index()
         goal_idx = self.world_to_grid(
@@ -409,6 +401,7 @@ class GraphNavigator(Node):
         self.path = [self.grid_to_world(ix, iy) for ix, iy in cell_path]
         self.current_waypoint_index = 0
         self.publish_path()
+
 
     # ---------------- A* ----------------
     def a_star(self, start: GridIndex, goal: GridIndex) -> List[GridIndex]:
@@ -453,6 +446,7 @@ class GraphNavigator(Node):
 
         return []
 
+
     # ---------------- Control ----------------
     def control_loop(self):
         if not self.path:
@@ -488,13 +482,11 @@ class GraphNavigator(Node):
             
             return
 
-
         wx, wy = self.path[self.current_waypoint_index]
         dx, dy = wx - x, wy - y
         dist = math.hypot(dx, dy)
         target_angle = math.atan2(dy, dx)
         angle_error = self.normalize_angle(target_angle - yaw)
-
 
         if dist < self.waypoint_dist:
             self.current_waypoint_index += 1
@@ -526,7 +518,6 @@ class GraphNavigator(Node):
         if hasattr(self, 'dynamic_map'):
             self.dynamic_map = (self.dynamic_map * 0.9).astype(np.uint8)
             self.dynamic_map[self.dynamic_map < 5] = 0
-
 
 
     # ---------------- Utilities ----------------
