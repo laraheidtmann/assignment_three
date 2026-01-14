@@ -48,7 +48,7 @@ class MetricLogger(Node):
                     'goal_y',
                     'success',
                     'time_to_goal',
-                    'path_length',
+                    'traveled_distance',
                     'replans',
                     'min_obstacle_clearance'
                 ])

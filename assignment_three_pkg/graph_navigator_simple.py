@@ -14,6 +14,8 @@ import numpy as np
 from rclpy.time import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from std_msgs.msg import Bool
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped
 import os
 GridIndex = Tuple[int, int]
 
@@ -89,6 +91,7 @@ class GraphNavigator(Node):
             self.cmd_pub = self.create_publisher(TwistStamped, "/cmd_vel", 10)
         else:
             self.cmd_pub = self.create_publisher(Twist, "/cmd_vel", 10)
+        self.path_pub = self.create_publisher(Path, '/plan', 10)
         self.result_pub = self.create_publisher(Bool, '/navigation_result', qos_map)
         self.timer = self.create_timer(0.05, self.control_loop)
         self.scan_timer=self.create_timer(0.7,self.scan_callback)
@@ -102,6 +105,25 @@ class GraphNavigator(Node):
     def lidar_callback(self, scan: LaserScan):
         self.current_scan=scan
 
+    def publish_path(self):
+        if not self.path:
+            self.get_logger().info("No path to publish.")
+            return
+
+        path_msg = Path()
+        path_msg.header.frame_id = 'map'
+        path_msg.header.stamp = self.get_clock().now().to_msg()
+
+        for wx, wy in self.path:
+            pose = PoseStamped()
+            pose.header.frame_id = 'map'
+            pose.header.stamp = path_msg.header.stamp
+            pose.pose.position.x = wx
+            pose.pose.position.y = wy
+            pose.pose.orientation.w = 1.0
+            path_msg.poses.append(pose)
+
+        self.path_pub.publish(path_msg)
 
 
     # ---------------- Scan handling ----------------
@@ -386,6 +408,7 @@ class GraphNavigator(Node):
         self.get_logger().info("Path planned")
         self.path = [self.grid_to_world(ix, iy) for ix, iy in cell_path]
         self.current_waypoint_index = 0
+        self.publish_path()
 
     # ---------------- A* ----------------
     def a_star(self, start: GridIndex, goal: GridIndex) -> List[GridIndex]:
