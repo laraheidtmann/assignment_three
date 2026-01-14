@@ -1,13 +1,13 @@
 # Graph-Based Navigation and Dynamic Obstacle Avoidance in ROS 
-This repository contains a ROS 2–based autonomous mobile robot navigation framework developed and evaluated in Webots using a TurtleBot3 Burger equipped with a 2D LiDAR sensor. The system supports SLAM-based mapping, graph-based A* navigation, online dynamic obstacle handling, and quantitative performance evaluation.
+This repository contains a ROS 2–based autonomous mobile robot navigation framework developed and evaluated in **Webots** using a **TurtleBot3 Burger** equipped with a **2D LiDAR** sensor. The system supports **SLAM-based mapping**, **graph-based A*** navigation, **dynamic obstacle handling**, and **quantitative performance evaluation**.
 
 The project implements and compares two navigation approaches:
 1. Standard Nav2 navigation
 2. A custom graph-based global planner with online replanning
 
 Both approaches are evaluated on:
-- A static map (no dynamic obstacles)
-- A dynamic environment (with moving obstacles)
+- A **static map** (no dynamic obstacles)
+- A **dynamic environment** (with moving obstacles)
 
 This enables a controlled and fair comparison of navigation performance under different environmental assumptions.
 
@@ -16,16 +16,16 @@ This enables a controlled and fair comparison of navigation performance under di
 ## 🚀 Project Overview
 The system is structured around two operational phases:
 1. Mapping & Exploration Phase
-  - Autonomous exploration of an unknown indoor environment
-  - Cartographer SLAM used to build a 2D occupancy grid map
-  - Smooth, conservative motion to improve SLAM consistency
-  - Generated maps are stored and reused for navigation
+    - Autonomous exploration of an unknown indoor environment
+    - **Cartographer SLAM** used to build a 2D occupancy grid map
+    - Smooth, conservative motion to improve SLAM consistency
+    - Generated maps are stored and reused for navigation
 2. Navigation Phase
-  - Adaptive Monte Carlo Localization (AMCL) for pose estimation
-  - Interchangeable navigation backends:
-    - Nav2 stack
-    - Custom graph-based navigation
-  - Quantitative evaluation via a shared metric logging pipeline
+    - **Adaptive Monte Carlo Localization (AMCL)** for pose estimation
+    - Interchangeable navigation backends:
+      - Nav2 stack
+      - Custom graph-based navigation
+    - Quantitative evaluation via a shared metric logging pipeline
 
 
 
@@ -96,46 +96,37 @@ The system is structured around two operational phases:
 
 
 ## 🧩 Node Descriptions
-#### `graph_navigator_simple.py`
-Custom graph-based navigation node using A* on an inflated occupancy grid. Detects dynamic obstacles by projecting LiDAR data into the map and performs hysteresis-based global replanning. Executes motion via waypoint tracking.
+**`graph_navigator_simple.py`:** Custom graph-based navigation node using A* on an inflated occupancy grid. Detects dynamic obstacles by projecting LiDAR data into the map and performs hysteresis-based global replanning. Executes motion via waypoint tracking.
 
-#### `graph_navigator_advanced.py`
-Experimental extension of the graph-based planner for testing alternative planning or optimization strategies. Not used in the final evaluation.
+**`graph_navigator_advanced.py`:** Experimental extension of the graph-based planner for testing alternative planning or optimization strategies. Not used in the final evaluation.
 
-#### `exploring_node.py`
-Simple reactive exploration controller used for initial SLAM testing.
+**`exploring_node.py`:** Simple reactive exploration controller used for initial SLAM testing.
 
-#### `exploring_node_improved.py`
-Improved exploration node optimized for SLAM quality, featuring smooth motion, stuck detection, and controlled obstacle avoidance.
+**`exploring_node_improved.py`:** Improved exploration node optimized for SLAM quality, featuring smooth motion, stuck detection, and controlled obstacle avoidance.
 
-#### `metric_logger.py`
-Logs navigation performance metrics for both Nav2 and custom navigation, enabling direct quantitative comparison.
+**`metric_logger.py`:** Logs navigation performance metrics for both Nav2 and custom navigation, enabling direct quantitative comparison.
 
-#### `odom_calculator.py`
-Computes traveled distance from odometry data for evaluation purposes.
+**`odom_calculator.py`:** Computes traveled distance from odometry data for evaluation purposes.
 
-#### `set_initial_pose.py`
-Publishes a fixed initial pose to AMCL to ensure consistent experiment initialization.
+**`set_initial_pose.py`:** Publishes a fixed initial pose to AMCL to ensure consistent experiment initialization.
 
-#### `turtlebot_driver.py`
-Interfaces ROS 2 velocity commands with the Webots TurtleBot3 robot.
+**`turtlebot_driver.py`:** Interfaces ROS 2 velocity commands with the Webots TurtleBot3 robot.
 
-#### `dynamic_obstacles_controller.py`
-Webots supervisor controller that spawns and moves dynamic obstacles during navigation experiments.
+**`dynamic_obstacles_controller.py`:** Webots supervisor controller that spawns and moves dynamic obstacles during navigation experiments.
 
 
 
 ## 🛠️ Build & Run Instructions
 This project is developed and tested using ROS 2 in a workspace named `ros2_ws`.
 
-### Important: Clean Up Old ROS Processes
+### 1. Important: Clean Up Old ROS Processes
 Before building or launching the system, ensure that no leftover ROS nodes are running:
 ```bash
 pkill -9 -f ros
 ```
 This prevents conflicts caused by orphaned nodes or stale DDS participants.
 
-### Build the Workspace
+### 2. Build the Workspace
 1. Navigate to the ROS 2 workspace:
    ```bash
    cd ~/ros2_ws
@@ -150,7 +141,7 @@ This prevents conflicts caused by orphaned nodes or stale DDS participants.
    ```
    💡 You must source the workspace in every new terminal before running the project.
 
-### SLAM & Map Building
+### 3. SLAM & Map Building
 To generate a map using autonomous exploration and Cartographer SLAM:
 ```bash
 ros2 launch assignment_three_pkg launch_slam.py
@@ -163,10 +154,8 @@ ros2 run nav2_map_server map_saver_cli -f /home/<user>/ros2_ws/src/assignment_th
 
 This will create the corresponding `.pgm` and `.yaml` files in the slam_maps directory.
 
-### Navigation (Static or Dynamic Environments)
-After a map has been created and saved, navigation can be launched using one of the following modes.
-
-The project supports two interchangeable navigation pipelines, selectable via launch files. Both pipelines use the same map, robot model, sensors, and simulator, ensuring fair comparison.
+### 4. Navigation (Static or Dynamic Environments)
+After a map has been created and saved, navigation can be launched using one of the following modes. The project supports two interchangeable navigation pipelines, selectable via launch files. Both pipelines use the same map, robot model, sensors, and simulator, ensuring fair comparison.
 
 #### Mode 1: Nav2-Based Navigation (Baseline)
 Launch the standard Nav2 navigation stack:
@@ -200,7 +189,6 @@ ros2 launch assignment_three_pkg launch_nav_custom.py
 - Control: Waypoint-based velocity control
 - Replanning: Global replanning with hysteresis
 
-##### Key Characteristics
 **Global Planning**
 - Occupancy grid converted into an 8-connected graph
 - Obstacles inflated by a configurable safety distance
@@ -268,9 +256,7 @@ pose:
 
 
 ## 🧪 Evaluation
-Navigation performance was evaluated through a sequence-based goal experiment. A fixed set of six goals was defined on the map, and the robot was commanded to navigate to each goal sequentially in a single run.
-
-The same goal sequence, start pose, and map were used for all experiments to ensure fair comparison.
+Navigation performance was evaluated through a sequence-based goal experiment. A fixed set of six goals was defined on the map, and the robot was commanded to navigate to each goal sequentially in a single run. The same goal sequence, start pose, and map were used for all experiments to ensure fair comparison.
 
 ### Static Map
 In the static scenario, no dynamic obstacles were present.
