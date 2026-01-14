@@ -1,5 +1,7 @@
 # Graph-Based Navigation and Dynamic Obstacle Avoidance in ROS
 
+<img src="./feup_logo.png" alt="FEUP Logo" width="240"/>
+
 **Course:** Intelligent Robotics
 
 **Institution:** Faculty of Engineering, University of Porto (FEUP)
@@ -8,8 +10,6 @@
 - Lara Heidtmann (up202502856@up.pt)
 - Guilherme Cruz (up202403107@up.pt)
 - Leonhard Haselbek (up202501695@up.pt)
-
-<img src="./feup_logo.png" alt="FEUP Logo" width="130"/>
 
 
 This repository contains a ROS 2–based autonomous mobile robot navigation framework developed and evaluated in **Webots** using a **TurtleBot3 Burger** equipped with a **2D LiDAR** sensor. The system supports **SLAM-based mapping**, **graph-based A*** navigation, **dynamic obstacle handling**, and **quantitative performance evaluation**.
@@ -84,7 +84,7 @@ The system is structured around two operational phases:
 
 
 
-## Repository Structure
+## Directory Structure
 ```
 ├── assignment_three_pkg
 │   ├── __init__.py
