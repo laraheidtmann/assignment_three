@@ -13,7 +13,7 @@ This enables a controlled and fair comparison of navigation performance under di
 
 
 
-## 🚀 Project Overview
+## Project Overview
 The system is structured around two operational phases:
 1. Mapping & Exploration Phase
     - Autonomous exploration of an unknown indoor environment
@@ -29,7 +29,7 @@ The system is structured around two operational phases:
 
 
 
-## 🧠 System Architecture
+## System Architecture
 **Core technologies**
 - ROS 2 Humble
 - Webots simulator
@@ -45,7 +45,7 @@ The system is structured around two operational phases:
 
 
 
-## 📁 Repository Structure
+## Repository Structure
 ```
 ├── assignment_three_pkg
 │   ├── __init__.py
@@ -95,7 +95,7 @@ The system is structured around two operational phases:
 
 
 
-## 🧩 Node Descriptions
+## Node Descriptions
 **`graph_navigator_simple.py`:** Custom graph-based navigation node using A* on an inflated occupancy grid. Detects dynamic obstacles by projecting LiDAR data into the map and performs hysteresis-based global replanning. Executes motion via waypoint tracking.
 
 **`graph_navigator_advanced.py`:** Experimental extension of the graph-based planner for testing alternative planning or optimization strategies. Not used in the final evaluation.
@@ -116,7 +116,7 @@ The system is structured around two operational phases:
 
 
 
-## 🛠️ Build & Run Instructions
+## Build & Run Instructions
 This project is developed and tested using ROS 2 in a workspace named `ros2_ws`.
 
 ### 1. Important: Clean Up Old ROS Processes
@@ -139,7 +139,7 @@ This prevents conflicts caused by orphaned nodes or stale DDS participants.
    ```bash
    source install/setup.bash
    ```
-   💡 You must source the workspace in every new terminal before running the project.
+   You must source the workspace in every new terminal before running the project.
 
 ### 3. SLAM & Map Building
 To generate a map using autonomous exploration and Cartographer SLAM:
@@ -218,7 +218,7 @@ ros2 launch assignment_three_pkg launch_nav_custom.py
 
 
 
-## 🔀 Usage
+## Usage
 ### Publishing Navigation Goals
 Navigation goals can be sent to the system in two different ways:
 
@@ -255,7 +255,7 @@ pose:
 
 
 
-## 🧪 Evaluation
+## Evaluation
 Navigation performance was evaluated through a sequence-based goal experiment. A fixed set of six goals was defined on the map, and the robot was commanded to navigate to each goal sequentially in a single run. The same goal sequence, start pose, and map were used for all experiments to ensure fair comparison.
 
 ### Static Map
@@ -299,7 +299,7 @@ Metrics are stored automatically in:
 
 
 
-## ⚠️ Limitations
+## Limitations
 - Dynamic obstacles are treated conservatively (no velocity estimation)
 - Grid-based planning may become computationally expensive at high resolutions
 - No semantic classification of obstacles
