@@ -42,6 +42,14 @@ The project was developed and tested using the following software environment.
 - `webots_ros2_driver`
 - `webots_ros2_control`
 
+**Additional ROS Packages**
+```bash
+sudo apt install ros-${ROS_DISTRO}-ros2-control ros-${ROS_DISTRO}-ros2-controllers
+sudo apt install ros-${ROS_DISTRO}-webots-ros2
+sudo apt install ros-${ROS_DISTRO}-turtlebot3-cartographer
+sudo apt install ros-${ROS_DISTRO}-turtlebot3-navigation2
+```
+
 **Python Dependencies**
 - Python 3 (default with ROS 2 Humble)
 - `numpy`
