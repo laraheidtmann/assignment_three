@@ -37,6 +37,7 @@ def generate_launch_description():
     package_dir = get_package_share_directory('assignment_three_pkg')
     world = LaunchConfiguration('world')
     mode = LaunchConfiguration('mode')
+    use_nav = LaunchConfiguration('nav', default=False)
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
     robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
 
@@ -99,6 +100,7 @@ def generate_launch_description():
         remappings=mappings,
         respawn=True
     )
+
     
     # SLAM
     slam_nodes = []
@@ -114,6 +116,13 @@ def generate_launch_description():
     waiting_nodes = WaitForControllerConnection(
         target_driver=turtlebot_driver,
         nodes_to_start=slam_nodes + ros_control_spawners
+    )
+    
+    exploring_node = Node(
+        package='assignment_three_pkg',
+        executable='exploring_node',
+        name='exploring_node',
+        output='screen'
     )
 
     return LaunchDescription([
@@ -134,6 +143,8 @@ def generate_launch_description():
 
         turtlebot_driver,
         waiting_nodes,
+        
+        exploring_node,
 
         # This action will kill all nodes once the Webots simulation has exited
         launch.actions.RegisterEventHandler(
